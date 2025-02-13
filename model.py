@@ -50,12 +50,19 @@ model.objective = mip.xsum(assignement[grp_id][tab_id]*group_sizes[grp_id] for t
 
 model.optimize()
 
-
+output_data = []
 if model.num_solutions:
     for grp_id in range(len(groups_ids)):
         for tab_id in range(len(tables_ids)):
             if assignement[grp_id][tab_id].x >= 0.99:
                 print(f"Group {groups_ids[grp_id]} is assigned to table {tables_ids[tab_id]}")
+                output_data.append({"group_id": grp_id, "table_id": tab_id})
 else:
     print("No solution found")
+
+
+for line in output_data:
+    with open("optput.json",'w') as f:
+        json.dump(output_data, f, indent=2)
+
 
