@@ -1,3 +1,8 @@
+#my files
+start_env.bash
+
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
