@@ -3,6 +3,7 @@ import mip
 from utils import input_id_checker
 
 INPUT_FILE = "input.json"
+OUTPUT_FILE = "output.json"
 
 with open(INPUT_FILE, 'r') as f:
     data = json.load(f)
@@ -62,7 +63,7 @@ else:
 
 
 for line in output_data:
-    with open("optput.json",'w') as f:
+    with open(OUTPUT_FILE,'w') as f:
         json.dump(output_data, f, indent=2)
 
 
