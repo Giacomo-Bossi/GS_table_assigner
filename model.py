@@ -57,7 +57,7 @@ if model.num_solutions:
         for tab_id in range(len(tables_ids)):
             if assignement[grp_id][tab_id].x >= 0.99:
                 print(f"Group {groups_ids[grp_id]} is assigned to table {tables_ids[tab_id]}")
-                output_data.append({"group_id": grp_id, "table_id": tab_id})
+                output_data.append({"group_id": grp_id, "table_id": tab_id, "group_size":group_sizes[grp_id]})
 else:
     print("No solution found")
 
