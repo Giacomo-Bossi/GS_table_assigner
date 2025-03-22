@@ -40,7 +40,7 @@ assignement = [[model.add_var(var_type= mip.BINARY) for _ in tables_ids]for _ in
 
 #table capacity contstraint
 for id in tables_ids:
-    model.add_constr(mip.xsum(assignement[gr][id] for gr in groups_ids) <= tables_capacities[id])
+    model.add_constr(mip.xsum(assignement[grp_id][id]*group_sizes[grp_id] for grp_id in groups_ids) <= tables_capacities[id])
 
 
 #single assignement
