@@ -1,53 +1,52 @@
 <?php
-require_once '../php/db_conn.php';
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 
-echo "Today is ".date("d/m/Y H:i:s")."<br>";
+// error_reporting(E_ALL);
+// ini_set('display_errors', 1);
+    
+    # .htaccess transform the requested url to this file, 
+    #  with the old local path as the argument.
+    $request = $_SERVER['REQUEST_URI'];
 
-echo "Connection to database successful<br>";
+    # split the old path from the URL parameters.
+    $param = explode('?', $request);
+    $param[0] = rtrim($param[0], '/');
+    #remove trailing slashes and load the correct webpage.
 
-$user = "user";
-// Prepare the SQL query with a placeholder
-$sql = "SELECT id,password FROM User WHERE id = ?";
-
-// Prepare the statement
-$stmt = $conn->prepare($sql);
-
-if ($stmt === false) {
-    die("Error preparing statement: " . $conn->error);
-}
-
-// Bind the parameter to the statement (s for string type)
-$stmt->bind_param("s", $user);
-
-// Execute the statement
-$stmt->execute();
-
-// Get the result
-$result = $stmt->get_result();
-
-// Check if user was found
-if ($result->num_rows > 0) {
-    // Fetch and display results
-    while ($row = $result->fetch_assoc()) {
-        echo "ID: " . $row["id"] . "<br>";
-
-        //pssw Verification v-0.1
-        if($row["password"] == "tmnf"){
-            echo "Password is correct<br>";
-        } else {
-            echo "Password is incorrect<br>";
-        }
+    switch ($param[0]) {
+        case '/':
+        case '':
+        case '/home':
+            require __DIR__ . '/views/homepage.php';
+            break;
+        case '/login':
+            require __DIR__ . '/views/login.php';
+            break;
+        case '/register':
+            require __DIR__ . '/views/register.php';
+            break;
+        case '/dashboard':
+            require __DIR__ . '/views/dashboard.php';
+            break;
+        case '/profile':
+            require __DIR__ . '/views/profile.php';
+            break;
+        case '/logout':
+            require __DIR__ . '/functions/logout.php';
+            break;
+        case '/phpinfo':
+            echo "disabled";
+            //phpinfo();
+            break;
+        default:
+            // if the URL is like /user/username, load the user view.
+            // $paths = explode('/', trim($param[0],"/"));
+            // if($paths[0]=="user"){
+            //     $userView = $paths[1];
+            //     require __DIR__ . "/views/userView.php";
+            //     break;
+            // }            
+            http_response_code(404); # set HTTP error code to 404: Not Found, if the route is not found.
+            require __DIR__ . '/errors/404.php';
+            break;
     }
-} else {
-    echo "No user found!";
-}
-
-// Close the statement and connection
-$stmt->close();
-$conn->close();
-
-
-
 ?>
