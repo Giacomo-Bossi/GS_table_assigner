@@ -1,13 +1,18 @@
 <?php
 
-// error_reporting(E_ALL);
-// ini_set('display_errors', 1);
-    
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+
+    /** Defined as the document root ($_SERVER['DOCUMENT_ROOT']) */
+    define('__ROOT__', $_SERVER['DOCUMENT_ROOT']);
+
     # .htaccess transform the requested url to this file, 
     #  with the old local path as the argument.
     $request = $_SERVER['REQUEST_URI'];
 
     # split the old path from the URL parameters.
+    /** Array of [0]: path, [1]: query */
     $param = explode('?', $request);
     $param[0] = rtrim($param[0], '/');
     #remove trailing slashes and load the correct webpage.
@@ -15,27 +20,32 @@
     switch ($param[0]) {
         case '/':
         case '':
-        case '/home':
-            require __DIR__ . '/views/homepage.php';
+            require __ROOT__ . '/views/homepage.php';
             break;
         case '/login':
-            require __DIR__ . '/views/login.php';
-            break;
-        case '/register':
-            require __DIR__ . '/views/register.php';
-            break;
-        case '/dashboard':
-            require __DIR__ . '/views/dashboard.php';
-            break;
-        case '/profile':
-            require __DIR__ . '/views/profile.php';
+            require __ROOT__ . '/views/login.php';
             break;
         case '/logout':
-            require __DIR__ . '/functions/logout.php';
+            require __ROOT__ . '/functions/logout.php';
+            break;
+        case '/mappa':
+            require __ROOT__ . '/views/map.php';
+            break;
+        case '/prenotazione':
+            require __ROOT__ . '/views/new_reservation.php';
+            break;
+        case '/eventi':
+            require __ROOT__ . '/views/eventi.php';
+            break;
+        case '/eventi/crea':
+            require __ROOT__ . '/views/eventicrea.php';
+            break;
+        case '/eventi/modifica':
+            require __ROOT__ . '/views/eventimodifica.php';
             break;
         case '/phpinfo':
-            echo "disabled";
-            //phpinfo();
+            die("disabled");
+            phpinfo();
             break;
         default:
             // if the URL is like /user/username, load the user view.

@@ -1,6 +1,6 @@
 <?php
-
 // Create connection
+/** Database connection object */
 $conn = new mysqli(getenv('DB_HOST'), getenv('DB_USER'), getenv('DB_PASS'), getenv('DB_NAME'));
 
 // Check connection
