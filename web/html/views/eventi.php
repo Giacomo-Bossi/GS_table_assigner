@@ -30,7 +30,7 @@ if (!isset($_SESSION['username'])) {
         <tbody>
             <?php
             require_once __ROOT__ . '/functions/db_conn.php';
-            $stmt = $conn->prepare("SELECT e.*,COALESCE(iscritti,0) as iscritti,COALESCE(posti,0) as posti FROM Evento AS e
+            $stmt = $conn->prepare("SELECT e.*,COALESCE(iscritti,0) as iscritti,COALESCE(posti,0) as posti FROM Evento AS e 
             LEFT JOIN (
                 SELECT idevento, COALESCE(SUM(persone),0) as iscritti FROM Prenotazione GROUP BY idevento
             ) AS iscritti ON e.id = iscritti.idevento
@@ -40,6 +40,8 @@ if (!isset($_SESSION['username'])) {
                     JOIN Tavolo t ON a.idtavolo = t.id
                     GROUP BY tp.id
             ) AS posti ON e.idtopologia = posti.idtopologia 
+
+            WHERE e.deleted=0
                                         ");
             $stmt->execute();
             $result = $stmt->get_result();
@@ -50,7 +52,10 @@ if (!isset($_SESSION['username'])) {
                 echo "<td>" . htmlspecialchars($row['time']) . "</td>";
                 echo "<td>" . htmlspecialchars($row['posti']) . "</td>";
                 echo "<td ".($row['posti']<$row['iscritti']? "style=\"color:red\"": "" ).">" . htmlspecialchars($row['iscritti']) . "</td>";
-                echo "<td><button onclick=\"document.location.href='/eventi/modifica?id=" . htmlspecialchars($row['id']) . "'\">Modifica</button></td>";
+                echo "<td>
+                    <button onclick=\"document.location.href='/eventi/modifica?id=" . htmlspecialchars($row['id']) . "'\">Modifica</button>
+                    <button onclick=\"document.location.href='/eventi/prenotazioni?id=" . htmlspecialchars($row['id']) . "'\">Gestisci prenotazioni</button>
+                </td>";
                 echo "</tr>";
             }
             ?>

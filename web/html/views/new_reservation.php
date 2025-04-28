@@ -24,7 +24,7 @@ if (!isset($_SESSION['username'])) {
             // Connect to the database
             require_once __ROOT__ . '/functions/db_conn.php';
             // Prepare and bind
-            $stmt = $conn->prepare("INSERT INTO Prenotazione (id, nome, persone, capotavola, idevento, timestamp) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt = $conn->prepare("INSERT INTO Prenotazione (id, nominativo, persone, capotavola, idevento, timestamp) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->bind_param("ssiiis", $id, $nome, $persone, $capotavola, $evento, $timestamp);
             // Execute the statement
             try{
@@ -60,11 +60,12 @@ if (!isset($_SESSION['username'])) {
             <select id="evento" name="evento">
             <?php
             require_once __ROOT__ . '/functions/db_conn.php';
-            $result = $conn->query("SELECT id, nome FROM Evento");
+            $result = $conn->query("SELECT id, nome FROM Evento WHERE deleted=0");
 
             if ($result->num_rows > 0) {
                 while($row = $result->fetch_assoc()) {
-                echo "<option value='" . $row["id"] . "'>" . $row["nome"] . "</option>";
+
+                echo "<option value='" . $row["id"] . "' ". (($_GET["e"]==$row["id"])?"selected":"") ." >" . $row["nome"] . "</option>";
                 }
             } else {
                 echo "<option value=''>Nessun evento disponibile</option>";

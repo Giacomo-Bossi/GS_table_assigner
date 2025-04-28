@@ -9,21 +9,19 @@ if (!isset($_SESSION['username'])) {
 <?php
     if($_SERVER["REQUEST_METHOD"] == "POST"){
         $id = $_POST['id'];
-        $nome = $_POST['nome'];
-        $inizio = $_POST['inizio'];
         
         // Validate input
-        if (empty($id) || empty($nome) || empty($inizio)) {
-            echo "Nome e data/ora sono obbligatori.";
+        if (empty($id)) {
+            echo "ID dell'evento mancante.";
             exit;
         }
 
         require_once __ROOT__ . '/functions/db_conn.php';
-        $stmt = $conn->prepare("UPDATE Evento SET nome = ?, time = ? WHERE id = ?");
-        $stmt->bind_param("ssi", $nome, $inizio, $id);
+        $stmt = $conn->prepare("UPDATE Evento SET deleted=1 WHERE id = ?");
+        $stmt->bind_param("i", $id);
         
         if ($stmt->execute()) {
-            echo "Evento modificato con successo!";
+            echo "Evento cancellato con successo!";
             echo "<script>setTimeout(function(){ window.location.href = '/eventi'; }, 2000);</script>";
             die();
         } else {
@@ -49,8 +47,6 @@ if (!isset($_SESSION['username'])) {
         echo "ID evento non specificato.";
         exit;
     }
-
-
     ?>
 
 <!DOCTYPE html>
@@ -69,14 +65,13 @@ if (!isset($_SESSION['username'])) {
         </div>
         <div>
             <label for="nome">Nome:</label>
-            <input type="text" id="nome" name="nome" required value="<?= $nome ?>">
+            <input type="text" id="nome" name="nome" required value="<?= $nome ?>" disabled>
         </div>
         <div>
             <label for="inizio">Data/Ora:</label>
-            <input type="datetime-local" id="inizio" name="inizio" required value="<?= date("Y-m-d\TH:i", strtotime($inizio)) ?>">
+            <input type="datetime-local" id="inizio" name="inizio" required value="<?= date("Y-m-d\TH:i", strtotime($inizio)) ?>" disabled>
         </div>
-        <button type="submit">Modifica evento</button>
-        <button type="button" onclick="document.location.href='/eventi/cancella?id=<?= $id ?>'">Cancella evento</button>
-        <button type="button" onclick="document.location.href='/eventi'">Annulla</button>
+        <button type="submit">Confirm deletion</button>
+        <button type="button" onclick="history.back()">Cancel</button>
 </body>
 </html>

@@ -43,9 +43,22 @@ ini_set('display_startup_errors', 1);
         case '/eventi/modifica':
             require __ROOT__ . '/views/eventimodifica.php';
             break;
+        case '/eventi/cancella':
+            require __ROOT__ . '/views/eventicancella.php';
+            break;
+        case '/eventi/prenotazioni':
+            require __ROOT__ . '/views/eventiprenotazioni.php';
+            break;
+        case '/eventi/prenotazioni/cancella':
+            require __ROOT__ . '/views/prenotazionecancella.php';
+            break;
         case '/phpinfo':
             die("disabled");
             phpinfo();
+            break;
+        case '/upstatus':
+            //die("disabled");
+            require __ROOT__ . '/functions/upstatus.php';
             break;
         default:
             // if the URL is like /user/username, load the user view.
