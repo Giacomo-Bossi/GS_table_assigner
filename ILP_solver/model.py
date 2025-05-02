@@ -8,7 +8,7 @@ def calculate_table_penalty(num_tables : int)->float:
     """
     return 1/(num_tables+1)
 
-def solve_instance(json_string :str)->str:
+def solve_instance(json_string :dict)->dict:
     """
     This function takes a json string describing tables and reservations and return a json string with the found solution to the problem
     
@@ -76,7 +76,7 @@ def solve_instance(json_string :str)->str:
         output_data['used_tables']=int(total_tables_used)
 
     else:
-        print("No solution found")
+        return {"Error : no solution is possible"}
 
     return output_data
 
