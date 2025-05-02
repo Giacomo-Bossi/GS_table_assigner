@@ -80,5 +80,26 @@ def solve_instance(json_string :dict)->dict:
 
     return output_data
 
+def solve_instance_file(input_path:str, output_path:str)->bool:
+    """
+    Wrapper function for solve_instance() to use files for input/output
+    """
+    try:
+        with open(input_path, 'r') as jsonfile:
+            data = json.loads(jsonfile)
+            sol = solve_instance(data)
+
+            try :
+                with open(output_path, 'w')as out:
+                    out.write(json.dumps(sol).encode("utf-8"))
+            except OSError:
+                print("error while opening output file")
+                return False
+            
+            return True
+        
+    except OSError:
+        print("error while opening input file")
+        return False
 
 
