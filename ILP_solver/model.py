@@ -5,15 +5,24 @@ from utils import input_id_checker
 INPUT_FILE = "input.json"
 OUTPUT_FILE = "output.json"
 
-with open(INPUT_FILE, 'r') as f:
-    data = json.load(f)
+def input_reader():
+    with open(INPUT_FILE, 'r') as f:
+        data = json.load(f)
+        tables = data['tables'] 
+        guests = data['groups']
+        return tables, guests
+    
+def calculate_table_penalty(num_tables : int)->float:
+    """
+    assign the table penalty in a way that does not affect the number of people that can fit
+    """
+    return 1/(num_tables+1)
 
-tables = data['tables']
-guests = data['groups']
+
+tables, guests = input_reader()
 
 tables_ids = []
 tables_capacities = []
-
 for tab in tables:
     tables_ids.append(tab["id"])
     tables_capacities.append(tab["capacity"])
@@ -26,7 +35,10 @@ for grp in guests:
     group_sizes.append(grp["size"])
 
 #for future, add preferences
+num_tables = len(tables)
+num_reserv = len(guests)
 
+table_penalty = calculate_table_penalty(num_tables)
 
 ok = input_id_checker(tables_ids,groups_ids)
 if not ok:
@@ -37,17 +49,19 @@ model = mip.Model(sense=mip.MAXIMIZE)
 #Variables
 
 assignement = [[model.add_var(var_type= mip.BINARY) for _ in tables_ids]for _ in groups_ids]#2D array with all variables
+used_tables = [model.add_var(var_type=mip.BINARY)for _ in tables_ids]
 
-#table capacity contstraint
+#table capacity contstraint and atble usage
 for id in tables_ids:
     model.add_constr(mip.xsum(assignement[grp_id][id]*group_sizes[grp_id] for grp_id in groups_ids) <= tables_capacities[id])
+    model.add_constr(mip.xsum(assignement[grp_id][id] for grp_id in groups_ids)<=num_tables * used_tables[id])
 
 
 #single assignement
 for g_id in groups_ids:
    model.add_constr(mip.xsum(assignement[g_id][tab_id] for tab_id in tables_ids) <= 1)
 
-model.objective = mip.xsum(assignement[grp_id][tab_id]*group_sizes[grp_id] for tab_id in tables_ids for grp_id in groups_ids)
+model.objective = mip.xsum(assignement[grp_id][tab_id]*group_sizes[grp_id] for tab_id in tables_ids for grp_id in groups_ids) - table_penalty * mip.xsum(used_tables)
 
 model.optimize()
 
