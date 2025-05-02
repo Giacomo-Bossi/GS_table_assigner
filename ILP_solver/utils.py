@@ -20,7 +20,7 @@ def input_id_checker(tab_ids : list, grp_ids:list)->bool:
     return True
 
 
-def JSON_add_table(capacity: int,id_counter:int,jsonstring:str) -> str:
+def JSON_add_table(capacity: int,id_counter:int,jsonstring:dict) -> dict:
     """
     Updates the jsonstring by adding the specified table
     """
@@ -29,7 +29,7 @@ def JSON_add_table(capacity: int,id_counter:int,jsonstring:str) -> str:
     jsonstring['tables'] = tables
     return jsonstring
 
-def JSON_add_reservation(size : int,id_counter:int,jsonstring:str)->str:
+def JSON_add_reservation(size : int,id_counter:int,jsonstring:dict)->dict:
     """
     Updates the jsonstring by adding the specified reservation 
     """
@@ -38,14 +38,15 @@ def JSON_add_reservation(size : int,id_counter:int,jsonstring:str)->str:
     jsonstring['groups'] = res
     return jsonstring
 
-def JSON_generate_input(table_list:list,reservation_list:list)->str:
+def JSON_generate_input(table_list:list,reservation_list:list)->dict:
     """
-    Generates a JSON string with the input for the model and returns it
+    Generates a dictionary with tables and reservations, it can be transaled directly in a json string.
+    The dictionary is always compatible with the solver.
     Args:
         tables (list[int]): A list of integers representing table capacities.
         reservations (list[int]): A list of integers representing reservation sizes.
     Returns:
-        The json formatted string to feed to the model
+        The dictionary to feed to the model
     """
     TABLE_COUNT = 0
     RESERVATION_COUNT = 0
