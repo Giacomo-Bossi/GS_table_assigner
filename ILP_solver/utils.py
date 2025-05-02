@@ -19,47 +19,51 @@ def input_id_checker(tab_ids : list, grp_ids:list)->bool:
         
     return True
 
-TABLE_COUNT = 0
-RESERVATION_COUNT = 0
-JSONSTRING = {"tables": [],"groups": []}
 
-def JSON_add_table(capacity: int = 1) -> None:
+def JSON_add_table(capacity: int,id_counter:int,jsonstring:str) -> str:
     """
-    Adds a table to the json string, handles ID by itself
+    Updates the jsonstring by adding the specified table
     """
-    global TABLE_COUNT
-    global JSONSTRING
-    tables = JSONSTRING['tables']
-    tables.append({"id" : TABLE_COUNT,  "capacity": capacity})
-    TABLE_COUNT+=1
-    JSONSTRING['tables'] = tables
+    tables = jsonstring['tables']
+    tables.append({"id" : id_counter,  "capacity": capacity})
+    jsonstring['tables'] = tables
+    return jsonstring
 
-def JSON_add_reservation(size : int=1)->None:
+def JSON_add_reservation(size : int,id_counter:int,jsonstring:str)->str:
     """
-    Adds a reservation to the json string, handles ID by itself
+    Updates the jsonstring by adding the specified reservation 
     """
-    global RESERVATION_COUNT
-    global JSONSTRING
-    res =JSONSTRING['groups']
-    res.append({"id" : RESERVATION_COUNT,  "size": size})
-    RESERVATION_COUNT+=1
-    JSONSTRING['groups'] = res
+    res =jsonstring['groups']
+    res.append({"id" : id_counter,  "size": size})
+    jsonstring['groups'] = res
+    return jsonstring
 
-def JSON_INIT()->None:
+def JSON_generate_input(table_list:list,reservation_list:list)->str:
     """
-    Restore initial values of  global variables used when generating a json
+    Generates a JSON string with the input for the model and returns it
+    Args:
+        tables (list[int]): A list of integers representing table capacities.
+        reservations (list[int]): A list of integers representing reservation sizes.
+    Returns:
+        The json formatted string to feed to the model
     """
-    global TABLE_COUNT
-    global RESERVATION_COUNT
-    global JSONSTRING
     TABLE_COUNT = 0
     RESERVATION_COUNT = 0
     JSONSTRING = {"tables": [],"groups": []}
 
+    for capacity in table_list:
+        JSONSTRING=JSON_add_table(capacity,TABLE_COUNT,JSONSTRING)
+        TABLE_COUNT+=1
 
-def JSON_generate_input(filename: str, tables_list: list[int], reservations_list: list[int]) -> bool:
+    for size in reservation_list:
+        JSONSTRING = JSON_add_reservation(size,RESERVATION_COUNT,JSONSTRING)
+        RESERVATION_COUNT+=1
+
+    return JSONSTRING
+
+def JSON_generate_input_file(filename: str, tables_list: list[int], reservations_list: list[int]) -> bool:
     """
-    Generates a JSON input file for table and reservation data.
+    Generates a JSON string with the input for the model and writes it to a file.
     Args:
         filename (str): The path to the JSON file to be created.
         tables (list[int]): A list of integers representing table capacities.
@@ -72,17 +76,14 @@ def JSON_generate_input(filename: str, tables_list: list[int], reservations_list
     """
     try:
         with open(filename, 'w') as jsonfile:
-            JSON_INIT()
-            for capacity in tables_list:
-                JSON_add_table(capacity)
-            for size in reservations_list:
-                JSON_add_reservation(size)
-            
-            jsonfile.write(json.dumps(JSONSTRING))
+            json_string = JSON_generate_input(tables_list,reservations_list)           
+            jsonfile.write(json.dumps(json_string))
             return True
         
     except OSError:
         print("error while opening the file")
         return False
-            
-JSON_generate_input("input.json",[24,5,48],[4,22])
+   
+
+JSON_generate_input_file("input.json",[24,5,48],[4,23])
+
