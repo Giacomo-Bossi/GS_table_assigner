@@ -22,7 +22,7 @@ groups_ids = []
 group_sizes = []
 
 for grp in guests:
-    groups_ids.append(grp["reservation"])
+    groups_ids.append(grp["id"])
     group_sizes.append(grp["size"])
 
 #for future, add preferences
