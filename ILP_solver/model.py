@@ -1,6 +1,5 @@
 import json
 import mip
-from utils import input_id_checker
 
 def calculate_table_penalty(num_tables : int)->float:
     """
@@ -8,14 +7,11 @@ def calculate_table_penalty(num_tables : int)->float:
     """
     return 1/(num_tables+1)
 
-def solve_instance(json_string :dict)->dict:
+def solve_instance(tables :dict,guests:dict)->dict:
     """
     This function takes a json string describing tables and reservations and return a json string with the found solution to the problem
     
     """
-    tables = json_string['tables'] 
-    guests = json_string['groups']
-
 
     tables_ids = []
     tables_capacities = []
@@ -35,11 +31,6 @@ def solve_instance(json_string :dict)->dict:
     num_reserv = len(guests)
 
     table_penalty = calculate_table_penalty(num_tables)
-
-    #should be already checked before
-    # ok = input_id_checker(tables_ids,groups_ids)          # WRONG FORMAT, CHECK ALWAYS FAILS
-    # if not ok:
-    #     return json.dumps({{"error": "Invalid format on the ids"}}).encode("utf-8")
 
     model = mip.Model(sense=mip.MAXIMIZE)
 
@@ -62,18 +53,21 @@ def solve_instance(json_string :dict)->dict:
 
     #organize optimal solution in json
     output_data = {"pairings": [],"used_tables" : 0}
-    pairs = []
+
 
     if model.num_solutions:
+        table_assignments = {tab_id: [] for tab_id in range(len(tables_ids))}
         for grp_id in range(len(groups_ids)):
             for tab_id in range(len(tables_ids)):
                 if assignement[grp_id][tab_id].x >= 0.99:
-                    pairs.append({"group_id": grp_id, "table_id": tab_id, "group_size":group_sizes[grp_id]})
+                    table_assignments[tab_id].append(grp_id)
 
         total_tables_used = sum(used_tables[i].x for i in range(len(used_tables)))
 
-        output_data['pairings'] = pairs
-        output_data['used_tables']=int(total_tables_used)
+        output_data['pairings'] = table_assignments
+        output_data['used_tables'] = int(total_tables_used)
+        output_data['total guests'] = sum(tables_capacities)
+        output_data['total assigneable'] = sum(group_sizes[grp_id] for grp_id in range(len(groups_ids)) if any(assignement[grp_id][tab_id].x >= 0.99 for tab_id in range(len(tables_ids))))
 
     else:
         return {"Error : no solution is possible"}
@@ -87,7 +81,7 @@ def solve_instance_file(input_path:str, output_path:str)->bool:
     try:
         with open(input_path, 'r') as jsonfile:
             data = json.loads(jsonfile)
-            sol = solve_instance(data)
+            sol = solve_instance(data['tables'],data['groups'])
 
             try :
                 with open(output_path, 'w')as out:
