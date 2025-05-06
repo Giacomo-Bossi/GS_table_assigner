@@ -6,9 +6,8 @@ from jsonschema.exceptions import ValidationError
 import json
 url = "http://localhost:8081"
 
-#data = JSON_generate_input([24,5,48],[4,23])
-with open("input.json") as file:
-     data = json.load(file)
+data = JSON_generate_input([24,5,4],[4,23])
+
 with open("schemas/input_schema.json", "r") as schema_file:  
         schema = json.load(schema_file)
 

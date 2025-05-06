@@ -1,86 +1,27 @@
 import json
 from model import solve_instance
-#checks that the IDS start form 0 and are incremented by 1 each time
-#def input_id_checker(tab_ids : list, grp_ids:list)->bool:
-    
-#    for i, item in enumerate(tab_ids):
-#        if item.get('id') != i:
-#            print(f"tab_ids: {item} expected: {i}")
-#            return False
 
-#    for i, item in enumerate(grp_ids):
-#        if item.get('id') != i:
-#            print(f"grp_ids: {item} expected: {i}")
-#            return False
-        
-#    return True
+def JSON_generate_input(table_capacities: list, group_sizes: list)->dict:
+    data = {
+        "tables": [{"table_id": f"table_{i+1}", "capacity": cap} for i, cap in enumerate(table_capacities)],
+        "groups": [{"name": f"group_{i+1}", "size": size} for i, size in enumerate(group_sizes)]
+    }
+    return data
 
+def JSON_generate_input_file(filename: str, table_capacities: list, group_sizes: list):
+    """
+    Generates a JSON file according to the input schema.
 
-def JSON_add_table(capacity: int,id_counter:int,jsonstring:dict) -> dict:
-    """
-    Updates the jsonstring by adding the specified table
-    """
-    tables = jsonstring['tables']
-    tables.append({"id" : id_counter,  "capacity": capacity})
-    jsonstring['tables'] = tables
-    return jsonstring
-
-def JSON_add_reservation(size : int,id_counter:int,jsonstring:dict)->dict:
-    """
-    Updates the jsonstring by adding the specified reservation 
-    """
-    res =jsonstring['groups']
-    res.append({"id" : id_counter,  "size": size})
-    jsonstring['groups'] = res
-    return jsonstring
-
-def JSON_generate_input(table_list:list,reservation_list:list)->dict:
-    """
-    Generates a dictionary with tables and reservations, it can be transaled directly in a json string.
-    The dictionary is always compatible with the solver.
     Args:
-        tables (list[int]): A list of integers representing table capacities.
-        reservations (list[int]): A list of integers representing reservation sizes.
-    Returns:
-        The dictionary to feed to the model
+        filename (str): The name of the file to save the JSON.
+        table_capacities (list): A list of integers representing table capacities.
+        group_sizes (list): A list of integers representing group sizes.
     """
-    TABLE_COUNT = 0
-    RESERVATION_COUNT = 0
-    JSONSTRING = {"tables": [],"groups": []}
+    data = JSON_generate_input(table_capacities,group_sizes)
 
-    for capacity in table_list:
-        JSONSTRING=JSON_add_table(capacity,TABLE_COUNT,JSONSTRING)
-        TABLE_COUNT+=1
+    with open(filename, "w") as f:
+        json.dump(data, f, indent=4)
 
-    for size in reservation_list:
-        JSONSTRING = JSON_add_reservation(size,RESERVATION_COUNT,JSONSTRING)
-        RESERVATION_COUNT+=1
-
-    return JSONSTRING
-
-def JSON_generate_input_file(filename: str, tables_list: list[int], reservations_list: list[int]) -> bool:
-    """
-    Generates a JSON string with the input for the model and writes it to a file.
-    Args:
-        filename (str): The path to the JSON file to be created.
-        tables (list[int]): A list of integers representing table capacities.
-        reservations (list[int]): A list of integers representing reservation sizes.
-    Returns:
-        bool: True if the file was successfully created, False if an error occurred.
-    Notes:
-        - The function writes the JSON data to the specified file.
-        - If an OSError occurs (e.g., file cannot be opened), the function prints an error message and returns False.
-    """
-    try:
-        with open(filename, 'w') as jsonfile:
-            json_string = JSON_generate_input(tables_list,reservations_list)           
-            jsonfile.write(json.dumps(json_string))
-            return True
-        
-    except OSError:
-        print("error while opening the file")
-        return False
-   
 
 #JSON_generate_input_file("input.json",[24,5,48],[4,23])
 

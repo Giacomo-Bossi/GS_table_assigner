@@ -11,7 +11,7 @@
                 "properties": {
                     "table_id": {
                         "description": "unique identifier of the table",
-                        "type": "integer"
+                        "type": "string"
                     },
                     "capacity": {
                         "description": "number of seats on the table",

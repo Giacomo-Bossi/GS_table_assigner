@@ -21,7 +21,6 @@ class table_assign_RequestHandler(BaseHTTPRequestHandler):
             data = json.loads(self.rfile.read(lenght))
 
             validate(schema, data)
-            print("input was validated")
             sol = process_request(data)
             sol=json.dumps(sol)
             self.send_response(200)
