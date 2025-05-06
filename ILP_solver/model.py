@@ -1,6 +1,5 @@
 import json
 import mip
-from utils import input_id_checker
 
 def calculate_table_penalty(num_tables : int)->float:
     """
@@ -8,14 +7,11 @@ def calculate_table_penalty(num_tables : int)->float:
     """
     return 1/(num_tables+1)
 
-def solve_instance(json_string :dict)->dict:
+def solve_instance(tables :dict,guests:dict)->dict:
     """
     This function takes a json string describing tables and reservations and return a json string with the found solution to the problem
     
     """
-    tables = json_string['tables'] 
-    guests = json_string['groups']
-
 
     tables_ids = []
     tables_capacities = []
@@ -35,11 +31,6 @@ def solve_instance(json_string :dict)->dict:
     num_reserv = len(guests)
 
     table_penalty = calculate_table_penalty(num_tables)
-
-    #should be already checked before
-    # ok = input_id_checker(tables_ids,groups_ids)          # WRONG FORMAT, CHECK ALWAYS FAILS
-    # if not ok:
-    #     return json.dumps({{"error": "Invalid format on the ids"}}).encode("utf-8")
 
     model = mip.Model(sense=mip.MAXIMIZE)
 

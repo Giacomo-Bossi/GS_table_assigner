@@ -24,7 +24,7 @@
                         "minimum": 0
                     }
                 },
-                "required": ["id", "capacity"]
+                "required": ["table_id", "capacity"]
             },
             "minItems": 1
         },
