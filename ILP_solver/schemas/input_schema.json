@@ -1,0 +1,56 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema#",
+    "title": "schema for the input to be passed in the web request",
+    "description": "description of a table configuration and the guests",
+    "type": "object",
+    "properties": {
+        "tables": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "table_id": {
+                        "description": "unique identifier of the table",
+                        "type": "integer"
+                    },
+                    "capacity": {
+                        "description": "number of seats on the table",
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "head_seats": {
+                        "description": "number of head seats",
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "required": ["id", "capacity"]
+            },
+            "minItems": 1
+        },
+        "groups": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "description": "name of the reservations",
+                        "type": "string"
+                    },
+                    "size": {
+                        "description": "amount of people for the reservation",
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "required_head":{
+                        "description": "set to true if the group has special needs and requires a head seat",
+                        "type": "boolean"
+                        }
+                },
+                "required": ["name", "size"]
+            },
+            "minItems": 1
+        }
+    },
+    "required": ["tables", "groups"]
+}
