@@ -4,18 +4,16 @@ import copy
 
 #checks that the IDS start form 0 and are incremented by 1 each time
 def input_id_checker(tab_ids : list, grp_ids:list)->bool:
-    expected = 0
-
-    for i in range(len(tab_ids)):
-        if tab_ids[i] != expected:
+    
+    for i, item in enumerate(tab_ids):
+        if item.get('id') != i:
+            print(f"tab_ids: {item} expected: {i}")
             return False
-        expected+=1
-    expected = 0
 
-    for i in range(len(grp_ids)):
-        if grp_ids[i] != expected:
+    for i, item in enumerate(grp_ids):
+        if item.get('id') != i:
+            print(f"grp_ids: {item} expected: {i}")
             return False
-        expected+=1
         
     return True
 

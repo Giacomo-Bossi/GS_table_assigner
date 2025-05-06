@@ -37,9 +37,9 @@ def solve_instance(json_string :dict)->dict:
     table_penalty = calculate_table_penalty(num_tables)
 
     #should be already checked before
-    ok = input_id_checker(tables_ids,groups_ids)
-    if not ok:
-        return json.dumps({{"error": "Invalid format on the ids"}}).encode("utf-8")
+    # ok = input_id_checker(tables_ids,groups_ids)          # WRONG FORMAT, CHECK ALWAYS FAILS
+    # if not ok:
+    #     return json.dumps({{"error": "Invalid format on the ids"}}).encode("utf-8")
 
     model = mip.Model(sense=mip.MAXIMIZE)
 
