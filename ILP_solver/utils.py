@@ -129,6 +129,17 @@ def generate_mapped_groups(inv_map:dict,grp_list)->list:
         ret.append(base)
     return ret
 
+def remap_out(model_out : dict,tab_map,grp_map):
+    pairs = model_out['pairings']
+    remapped_dic = {}
+    for t_id in pairs:
+        remapped_dic[tab_map[t_id]] = []
+        for g_id in pairs[t_id]:
+            remapped_dic[tab_map[t_id]].append(grp_map[g_id])
+
+    model_out['pairings'] = remapped_dic
+    return model_out
+
 #input must have already been validated
 def process_request(json_input : dict)->dict:
     """
@@ -142,11 +153,11 @@ def process_request(json_input : dict)->dict:
 
     grp_id_map = generate_groups_mapping(grp_list)
     inverse_grp_id_map = {v: k for k, v in grp_id_map.items()}
-    print(tab_id_map)
-    print(grp_id_map)
+
     map1 = generate_mapped_tables(inverse_tab_id_map,tab_list)
-    print(map1)
+
     map2 = generate_mapped_groups(inverse_grp_id_map,grp_list)
-    print(map2)
-    print(solve_instance(map1,map2))  #heads still not supported
-    return
+
+    model_out = solve_instance(map1,map2)  #heads still not supported
+    
+    return remap_out(model_out,tab_id_map,grp_id_map)

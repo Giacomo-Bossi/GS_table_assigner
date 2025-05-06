@@ -53,18 +53,20 @@ def solve_instance(tables :dict,guests:dict)->dict:
 
     #organize optimal solution in json
     output_data = {"pairings": [],"used_tables" : 0}
-    pairs = []
+
 
     if model.num_solutions:
+        table_assignments = {tab_id: [] for tab_id in range(len(tables_ids))}
         for grp_id in range(len(groups_ids)):
             for tab_id in range(len(tables_ids)):
                 if assignement[grp_id][tab_id].x >= 0.99:
-                    pairs.append({"group_id": grp_id, "table_id": tab_id, "group_size":group_sizes[grp_id]})
+                    table_assignments[tab_id].append(grp_id)
 
         total_tables_used = sum(used_tables[i].x for i in range(len(used_tables)))
 
-        output_data['pairings'] = pairs
-        output_data['used_tables']=int(total_tables_used)
+        output_data['pairings'] = table_assignments
+        output_data['used_tables'] = int(total_tables_used)
+
 
     else:
         return {"Error : no solution is possible"}
@@ -78,7 +80,7 @@ def solve_instance_file(input_path:str, output_path:str)->bool:
     try:
         with open(input_path, 'r') as jsonfile:
             data = json.loads(jsonfile)
-            sol = solve_instance(data)
+            sol = solve_instance(data['tables'],data['groups'])
 
             try :
                 with open(output_path, 'w')as out:

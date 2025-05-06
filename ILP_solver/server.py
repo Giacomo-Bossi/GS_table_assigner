@@ -23,8 +23,6 @@ class table_assign_RequestHandler(BaseHTTPRequestHandler):
             validate(schema, data)
             print("input was validated")
             sol = process_request(data)
-            #sol = solve_instance(data)
-            sol = 4
             sol=json.dumps(sol)
             self.send_response(200)
             self.send_header('Content_type', 'application/json')
@@ -36,16 +34,16 @@ class table_assign_RequestHandler(BaseHTTPRequestHandler):
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps({"error": "Error when decoding the json"}).encode('utf-8'))
-        except Exception as e:
-            self.send_response(500)
-            self.send_header('Content-Type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
         except ValidationError as e:
             self.send_response(400)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps({"error": "JSON does not match the schema", "details": str(e)}).encode('utf-8'))
+        except Exception as e:
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))        
 
 
 def run(IP_address,port):
