@@ -66,7 +66,8 @@ def solve_instance(tables :dict,guests:dict)->dict:
 
         output_data['pairings'] = table_assignments
         output_data['used_tables'] = int(total_tables_used)
-        output_data['total guests'] = sum(tables_capacities)
+        output_data['total seats'] = sum(tables_capacities)
+        output_data['total guests'] = sum(group_sizes)
         output_data['total assigneable'] = sum(group_sizes[grp_id] for grp_id in range(len(groups_ids)) if any(assignement[grp_id][tab_id].x >= 0.99 for tab_id in range(len(tables_ids))))
 
     else:
