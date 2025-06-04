@@ -2,7 +2,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
-from utils import process_request
+from utils import process_request, loadMIPlibs
 
 schema = None
 
@@ -39,14 +39,20 @@ class table_assign_RequestHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({"error": "JSON does not match the schema", "details": str(e)}).encode('utf-8'))
         except Exception as e:
+            print(f"Error: {e}") 
             self.send_response(500)
             self.send_header('Content-Type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))        
+            self.end_headers() 
+            self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))      
 
 
 def run(IP_address,port):
     global schema
+
+    print("loading MIP solver...")
+    loadMIPlibs()
+    print("MIP solver loaded")
+
     print(f"starting the server at : {IP_address}:{port}...")
     with open("schemas/input_schema.json", "r") as schema_file:  
         schema = json.load(schema_file)

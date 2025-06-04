@@ -52,6 +52,9 @@ ini_set('display_startup_errors', 1);
         case '/eventi/prenotazioni/cancella':
             require __ROOT__ . '/views/prenotazionecancella.php';
             break;
+        case '/csvconvert':
+            require __ROOT__ . '/views/csvconvert.php';
+            break;
         case '/phpinfo':
             die("disabled");
             phpinfo();

@@ -1,5 +1,6 @@
 import json
 from model import solve_instance
+from mip import Model
 
 def JSON_generate_input(table_capacities: list, group_sizes: list)->dict:
     data = {
@@ -102,3 +103,7 @@ def process_request(json_input : dict)->dict:
     model_out = solve_instance(map1,map2)  #heads still not supported
     
     return remap_out(model_out,tab_id_map,grp_id_map)
+
+
+def loadMIPlibs():
+    Model("trow out", sense="maximize")

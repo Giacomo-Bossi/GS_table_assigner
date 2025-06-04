@@ -3,6 +3,7 @@ start_env.bash
 
 nogit-*
 
+vendor/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
