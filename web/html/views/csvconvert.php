@@ -119,6 +119,7 @@ foreach ($data as $table) {
     $arrayofgruppi = [];
     $capotavola = [];
     foreach ($result['pairings'][$table['table_id']] as $group_name) {
+
         // Find the group in $csvArray with name = $group_name
         // $group = array_find($csvArray, function($item) use ($group_name) {
         //     return $item['name'] === $group_name;
@@ -130,6 +131,10 @@ foreach ($data as $table) {
                 break;
             }
         }
+        if($group['size'] <= 0) {
+            continue; // Skip groups with size 0 or less
+        }   
+        
         if ($group['required_head'] == 1 && $table['head_seats'] > 0) {
             $capotavola[] = $group;
             $table['head_seats']--;
@@ -137,11 +142,13 @@ foreach ($data as $table) {
         }
         $arrayofgruppi[] = $group; // Add group name to the array
     }
-    if (count($capotavola) > 0  && isset($tavolo["gui"]["head_on"]) && $tavolo["gui"]["head_on"] == "START") {
+
+
+    if (count($capotavola) > 0  && isset($table["gui"]["head_on"]) && $table["gui"]["head_on"] == "START") {
         $arrayofgruppi = array_merge($capotavola, $arrayofgruppi); // Add head of table groups at the start
-    } else if (count($capotavola) > 0  && isset($tavolo["gui"]["head_on"]) && $tavolo["gui"]["head_on"] == "END") {
+    } else if (count($capotavola) > 0  && isset($table["gui"]["head_on"]) && $table["gui"]["head_on"] == "END") {
         $arrayofgruppi = array_merge($arrayofgruppi, $capotavola); // Add head of table groups at the end
-    } else if (count($capotavola) > 0  && isset($tavolo["gui"]["head_on"]) && $tavolo["gui"]["head_on"] == "BOTH") {
+    } else if (count($capotavola) > 0  && isset($table["gui"]["head_on"]) && $table["gui"]["head_on"] == "BOTH") {
         // Add half on the start and half on the end
         $mid = ceil(count($capotavola) / 2);
         $arrayofgruppi = array_merge(
@@ -175,18 +182,20 @@ foreach ($data as $table) {
 
     if ($width <= $height) {
 
-
         $unitheight = $height / ($table['capacity'] - $table['head_seats']); // Calculate unit height based on side capacity
-
 
         foreach ($arrayofgruppi as $group) {
             $group_name = $group['show_name']; // Group name
 
             $group_height = ($group['size'] - $group['required_head']) * $unitheight; // Calculate height based on group size
 
-            if ($y + $group_height >= $table['gui']['y'] + $table['gui']['height']) {
-                $group_height = $table['gui']['y'] + $table['gui']['height'] - $y; // Adjust height to fit within the table
+            if ($y + $group_height >=  $gui['y'] +  $gui['height']) {
+                $group_height =  $gui['y'] +  $gui['height'] - $y; // Adjust height to fit within the table
 
+            }
+
+            if($group['required_head'] == 1 &&  $gui['head_on'] == "END") {
+                $y =  $gui['y'] + $gui['height'] - $group_height; 
             }
 
             // Generate a random pastel color for each group
@@ -199,8 +208,7 @@ foreach ($data as $table) {
 
             // Calculate position to center the text in the table
             
-            $pdf->SetFont('Helvetica', '', 5);
-            $pdf->SetTextColor(50, 50, 50); 
+            setFont($pdf);
             $textWidth = $pdf->GetStringWidth($group_name) + $pdf->GetStringWidth(" ");
             $textX = $x + ($width - $textWidth) / 2; // Center horizontally
             $textY = $y + ($group_height / 2); // Center vertically
@@ -213,7 +221,10 @@ foreach ($data as $table) {
             $textsToPrint[] = [
                 'text' => $group_name,
                 'x' => $textX,
-                'y' => $textY
+                'y' => $textY,
+                'r' => $r,
+                'g' => $g,
+                'b' => $b
             ];
             // $pdf->SetXY($textX, $textY);
             // $pdf->Write(0, $group_name);
@@ -248,8 +259,8 @@ foreach ($data as $table) {
 
             // Calculate position to center the text in the table
             
-            $pdf->SetFont('Helvetica', '', 5);
-            $pdf->SetTextColor(50, 50, 50); 
+            
+            setFont($pdf);
             $textWidth = $pdf->GetStringWidth($group_name) + $pdf->GetStringWidth(" ");
             $textX = $x + ($group_width - $textWidth)/ 2; // Center horizontally
             //$textY = $y + ($height) / 2; // Center vertically
@@ -264,7 +275,10 @@ foreach ($data as $table) {
             $textsToPrint[] = [
                 'text' => $group_name,
                 'x' => $textX,
-                'y' => $textY
+                'y' => $textY,
+                'r' => $r,
+                'g' => $g,
+                'b' => $b
             ];
 
             // $pdf->SetXY($textX, $textY);
@@ -276,14 +290,18 @@ foreach ($data as $table) {
     }
 
     
-        $pdf->SetFont('Helvetica', '', 5);
-        $pdf->SetTextColor(50, 50, 50); // Black color
-    //draw the table names now
-    foreach ($textsToPrint as $textData) {
-        $pdf->SetXY($textData['x'], $textData['y']);
-        $pdf->Write(0, $textData['text']);
-    }
+    
 
+}
+
+setFont($pdf);
+//draw the table names now
+foreach ($textsToPrint as $textData) {
+    $pdf->SetFillColor($textData['r'], $textData['g'], $textData['b']); // Set color to the pastel color
+    $pdf->Rect($textData['x'], $textData['y'] - 1.5, $pdf->GetStringWidth($textData['text']) + 2 , 2.5, 'F'); // Fill background for text
+
+    $pdf->SetXY($textData['x'], $textData['y']);
+    $pdf->Write(0, $textData['text']);
 }
 
 
@@ -297,3 +315,9 @@ foreach ($data as $table) {
 
 // Output the result
 $pdf->Output(); // To browser
+
+
+function setFont($pdf) {
+        $pdf->SetFont('Helvetica', 'B', 7);
+        $pdf->SetTextColor(50, 50, 50); 
+}

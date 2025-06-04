@@ -106,4 +106,4 @@ def process_request(json_input : dict)->dict:
 
 
 def loadMIPlibs():
-    Model("trow out", sense="maximize")
+    Model("throw out", sense="maximize")

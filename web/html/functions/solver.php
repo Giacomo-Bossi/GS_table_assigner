@@ -111,7 +111,10 @@ function _SOLVER_solve($tavoli, $prenotazioni) {
 
     }
 
-
+    
+   
+    
+    $capotavola = [];
     $auto_prenotazioni = [];
     $manual_prenotazioni = [];
     foreach ($prenotazioni as $prenotazione) {
@@ -120,9 +123,23 @@ function _SOLVER_solve($tavoli, $prenotazioni) {
             $manual_prenotazioni[] = $prenotazione;
             continue;
         }
+        if($prenotazione['required_head'] == 1){ //TEMPORARY FIX
+            // Skip head seat groups
+            $capotavola[] = $prenotazione;
+            continue;
+        }
         $auto_prenotazioni[] = $prenotazione;
     }
     // execute the near field solver
+    
+    $capotavola_assegnazioni = solveCapotavolaReservations($tavoli, $capotavola);
+    if($capotavola_assegnazioni['failed']) {
+        // If there are failed near field reservations, we re-add them to the automatic one
+        foreach ($capotavola_assegnazioni['failed'] as $failed) {
+            $auto_prenotazioni[] = $failed;
+        }
+    }
+
     $near_field = solveNearFieldReservations($tavoli, $manual_prenotazioni);
 
     if($near_field['failed']) {
@@ -173,6 +190,8 @@ function _SOLVER_solve($tavoli, $prenotazioni) {
 
     $merged = $result["pairings"];
 
+
+
     foreach($near_field['assigned'] as $near_field_assignment) {
         $table_id = $near_field_assignment['table_id'];
         $group_name = $near_field_assignment['group_name'];
@@ -180,13 +199,23 @@ function _SOLVER_solve($tavoli, $prenotazioni) {
         array_unshift($merged[$table_id], $group_name);
         //$merged[$table_id][] = $group_name;  //i want the group to be the first (closer to the windows)
     }
+    
 
     foreach($assegnamenti as $groupings) {
         $table_id = $groupings['table_id'];
         $group_name = $groupings['group_name'];
-        // Add the near field assignment to the merged result
+        // Add the groupings assignment to the merged result
         array_unshift($merged[$table_id], $group_name);
-        //$merged[$table_id][] = $group_name;  //i want the group to be the first (closer to the windows)
+    }
+
+    //print_r($capotavola_assegnazioni['assigned']);
+    foreach($capotavola_assegnazioni['assigned'] as $capotavola_assignment) {
+        $table_id = $capotavola_assignment['table_id'];
+        $group_name = $capotavola_assignment['group_name'];
+        // Add the head spot assignment to the merged result
+       // echo "Adding ".$table_id." - ".$group_name;
+        array_unshift($merged[$table_id], $group_name);
+        //$merged[$table_id][] = $group_name;  
     }
 
     $trueresults = [
@@ -194,6 +223,7 @@ function _SOLVER_solve($tavoli, $prenotazioni) {
         'total assigneable' => $result['total assigneable'] + $near_field['number_assigned'],
         'pairings' => $merged,
     ];
+
 
     return $trueresults;
 }
@@ -232,5 +262,44 @@ function solveNearFieldReservations(&$tavoli, $campo_prenotazioni) {
     ];
     return $res;
 }
+
+
+function solveCapotavolaReservations(&$tavoli, $capotavola_prenotazioni) {
+    $assegnamenti = [];
+    $fallimenti = []; 
+    $totassegnati = 0;
+    foreach ($capotavola_prenotazioni as $pren) {
+        $found = false;
+        foreach ($tavoli as &$tavolo) {
+            
+            if (($tavolo['capacity'] >= $pren['size']) && ($tavolo['head_seats'] >= $pren['required_head'])) {
+                // Assign the group to this table
+                $assegnamenti[] = [
+                    'table_id' => $tavolo['table_id'],
+                    'group_name' => $pren['name'],
+                ];
+                // Reduce the capacity of the table
+                $tavolo['capacity'] -= $pren['size'];
+                $totassegnati+=$pren['size'];
+                $found = true;
+                break; // Stop searching for this group
+            }
+        }
+        if (!$found) {
+            $fallimenti[] = $pren; // Store the failed assignment
+            continue; //soft fail, if it can't find a place, leave to the basic solver
+        }
+    }
+    $res = [
+        'assigned' => $assegnamenti,
+        'failed' => $fallimenti,
+        'number_assigned' => $totassegnati
+    ];
+    return $res;
+
+
+
+}
+
 
 ?>
