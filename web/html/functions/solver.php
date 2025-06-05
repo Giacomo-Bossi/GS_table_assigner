@@ -175,8 +175,7 @@ function _SOLVER_solve($tavoli, $prenotazioni) {
     
     $json_input = json_encode($input);
     //print($json_input);
-    //$url = 'http://localhost:8081';
-    $url = 'https://entrepreneurs-shakira-universe-supporters.trycloudflare.com/';
+    $url = 'http://localhost:8081';
 
     $options = array(
         'http' => array(
