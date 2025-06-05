@@ -1,6 +1,9 @@
 <?php
 function _SOLVER_solve($tavoli, $prenotazioni) {
+    
+    $DEB_gen_start = microtime(true);
 
+    $DEB_close_start = microtime(true);
     $vicini = [];
     foreach ($prenotazioni as $prenotazione) {
         if(count($prenotazione['close_to']) > 0) {
@@ -19,6 +22,7 @@ function _SOLVER_solve($tavoli, $prenotazioni) {
             $vicini[] = $group; // Add the group of close reservations
         }
     }
+    $DEB_close_end = microtime(true);
 
     $assegnamenti = [];
     $postiassegnati = 0;
@@ -110,10 +114,8 @@ function _SOLVER_solve($tavoli, $prenotazioni) {
         }
 
     }
-
     
    
-    
     $capotavola = [];
     $auto_prenotazioni = [];
     $manual_prenotazioni = [];
@@ -132,6 +134,7 @@ function _SOLVER_solve($tavoli, $prenotazioni) {
     }
     // execute the near field solver
     
+    $DEB_head_start = microtime(true);
     $capotavola_assegnazioni = solveCapotavolaReservations($tavoli, $capotavola);
     if($capotavola_assegnazioni['failed']) {
         // If there are failed near field reservations, we re-add them to the automatic one
@@ -139,7 +142,10 @@ function _SOLVER_solve($tavoli, $prenotazioni) {
             $auto_prenotazioni[] = $failed;
         }
     }
+    $DEB_head_end = microtime(true);
 
+
+    $DEB_near_start = microtime(true);
     $near_field = solveNearFieldReservations($tavoli, $manual_prenotazioni);
 
     if($near_field['failed']) {
@@ -149,6 +155,7 @@ function _SOLVER_solve($tavoli, $prenotazioni) {
             $auto_prenotazioni[] = $failed;
         }
     }
+    $DEB_near_end= microtime(true);
 
     $mapped_tavoli = [];
     foreach ($tavoli as $tavolo) {
@@ -168,7 +175,8 @@ function _SOLVER_solve($tavoli, $prenotazioni) {
     
     $json_input = json_encode($input);
     //print($json_input);
-    $url = 'http://localhost:8081';
+    //$url = 'http://localhost:8081';
+    $url = 'https://entrepreneurs-shakira-universe-supporters.trycloudflare.com/';
 
     $options = array(
         'http' => array(
@@ -180,6 +188,8 @@ function _SOLVER_solve($tavoli, $prenotazioni) {
     
     $context  = stream_context_create($options);
     
+    $DEB_sol_start = microtime(true);
+    //* ///REAL SOLVER CALL
     $result = file_get_contents($url, false, $context);
     if ($result === FALSE) {
         echo "Error calling the optimization service.";
@@ -188,8 +198,18 @@ function _SOLVER_solve($tavoli, $prenotazioni) {
     
     $result = json_decode($result, true);
 
+    /*/ // EMPTY TESTING RESULT
+    $result = [
+        "total guests" => 0,
+        "total assigneable" => 0,
+        "pairings" => []
+    ];
+    foreach($mapped_tavoli as $tavolo) {
+        $result['pairings'][$tavolo['table_id']] = [];
+    }
+    //*/
     $merged = $result["pairings"];
-
+    $DEB_sol_end = microtime(true);
 
 
     foreach($near_field['assigned'] as $near_field_assignment) {
@@ -217,11 +237,17 @@ function _SOLVER_solve($tavoli, $prenotazioni) {
         array_unshift($merged[$table_id], $group_name);
         //$merged[$table_id][] = $group_name;  
     }
-
+    $DEB_gen_end = microtime(true);
     $trueresults = [
         'total guests' => $result['total guests'] + $near_field['number_assigned'],
         'total assigneable' => $result['total assigneable'] + $near_field['number_assigned'],
         'pairings' => $merged,
+        'DEB' => [
+            'solver_duration' => $DEB_sol_end - $DEB_sol_start,
+            'close_solver_duration' => $DEB_close_end - $DEB_close_start,
+            'head_solver_duration' => $DEB_head_end - $DEB_head_start,
+            'total_duration' => $DEB_gen_end - $DEB_gen_start
+        ],
     ];
 
 
