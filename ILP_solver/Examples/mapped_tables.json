@@ -1,0 +1,32 @@
+[
+    {
+        "id": 0,
+        "capacity": 10,
+        "head_seats": 0
+    },
+    {
+        "id": 1,
+        "capacity": 3,
+        "head_seats": 0
+    },
+    {
+        "id": 2,
+        "capacity": 8,
+        "head_seats": 0
+    },
+    {
+        "id": 3,
+        "capacity": 10,
+        "head_seats": 0
+    },
+    {
+        "id": 4,
+        "capacity": 12,
+        "head_seats": 0
+    },
+    {
+        "id": 5,
+        "capacity": 7,
+        "head_seats": 0
+    }
+]

@@ -1,0 +1,14 @@
+{
+    "pairings": {
+        "table_1": ["group_6"],
+        "table_2": [],
+        "table_3": ["group_4"],
+        "table_4": ["group_1"],
+        "table_5": ["group_3", "group_7"],
+        "table_6": ["group_2"]
+    },
+    "used_tables": 5,
+    "total seats": 50,
+    "total guests": 47,
+    "total assigneable": 43
+}
