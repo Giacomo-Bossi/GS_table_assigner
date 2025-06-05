@@ -185,7 +185,7 @@ foreach ($data as $table) {
         $unitheight = $height / ($table['capacity'] - $table['head_seats']); // Calculate unit height based on side capacity
 
         foreach ($arrayofgruppi as $group) {
-            $group_name = $group['show_name']; // Group name
+            $group_name = $group['show_name'].' ('.$group['size'].($group["required_head"]==1?';C':'').')'; // Group label
 
             $group_height = ($group['size'] - $group['required_head']) * $unitheight; // Calculate height based on group size
 
@@ -240,7 +240,8 @@ foreach ($data as $table) {
         $hor_idx=0;
         $totgr = count($arrayofgruppi);
         foreach ($arrayofgruppi as $group) {
-            $group_name = $group['show_name']; // Group name
+            $group_name = $group['show_name'].' ('.$group['size'].($group["required_head"]==1?';C':'').')'; // Group label
+
 
             $group_width = ($group['size'] - $group['required_head']) * $unitwidth; // Calculate height based on group size
 
@@ -264,7 +265,8 @@ foreach ($data as $table) {
             $textWidth = $pdf->GetStringWidth($group_name) + $pdf->GetStringWidth(" ");
             $textX = $x + ($group_width - $textWidth)/ 2; // Center horizontally
             //$textY = $y + ($height) / 2; // Center vertically
-            $textY = $y + 1 + (2 * ($hor_idx + (5 - $totgr)/2)); // Center vertically with a small offset
+            //$textY = $y + 1 + (2 * ($hor_idx + (4 - $totgr)/2)); // Center vertically with a small offset
+            $textY = $y + 3 + $height * ($hor_idx / 4); // Center vertically with a small offset
             $hor_idx++; // Increment horizontal group ID for next group
 
             
@@ -298,7 +300,7 @@ setFont($pdf);
 //draw the table names now
 foreach ($textsToPrint as $textData) {
     $pdf->SetFillColor($textData['r'], $textData['g'], $textData['b']); // Set color to the pastel color
-    $pdf->Rect($textData['x'], $textData['y'] - 1.5, $pdf->GetStringWidth($textData['text']) + 2 , 2.5, 'F'); // Fill background for text
+    $pdf->Rect($textData['x'], $textData['y'] - 1.75, $pdf->GetStringWidth($textData['text']) + 2 , 3, 'F'); // Fill background for text
 
     $pdf->SetXY($textData['x'], $textData['y']);
     $pdf->Write(0, $textData['text']);
