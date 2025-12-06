@@ -200,7 +200,7 @@ function _SOLVER_solve($tavoli, $prenotazioni) {
     /*/ // EMPTY TESTING RESULT
     $result = [
         "total guests" => 0,
-        "total assigneable" => 0,
+        "total assignable" => 0,
         "pairings" => []
     ];
     foreach($mapped_tavoli as $tavolo) {
@@ -239,7 +239,7 @@ function _SOLVER_solve($tavoli, $prenotazioni) {
     $DEB_gen_end = microtime(true);
     $trueresults = [
         'total guests' => $result['total guests'] + $near_field['number_assigned'],
-        'total assigneable' => $result['total assigneable'] + $near_field['number_assigned'],
+        'total assignable' => $result['total assignable'] + $near_field['number_assigned'],
         'pairings' => $merged,
         'DEB' => [
             'solver_duration' => $DEB_sol_end - $DEB_sol_start,
