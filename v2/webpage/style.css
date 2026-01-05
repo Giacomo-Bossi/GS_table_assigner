@@ -1,0 +1,362 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+    --bg-color: #009185;
+}
+
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: var(--bg-color);
+    /* #5a5fbb */
+}
+
+.drag-area {
+    height: 400px;
+    width: 700px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    transition: all 0.5s;
+    animation: linearGradientMove .7s infinite linear;
+    animation-play-state: paused;
+}
+
+.drag-area.active {
+    animation-play-state: running;
+}
+
+.drag-area #cogone,
+.drag-area #cogtwo {
+    transform-origin: center;
+    transform-box: fill-box;
+    animation: rotateCog 4s infinite linear;
+    animation-play-state: paused;
+}
+
+.drag-area #cogtwo {
+    animation-direction: reverse;
+}
+
+.drag-area.active #cogone,
+.drag-area.active #cogtwo {
+    animation-play-state: running;
+}
+
+.drag-area.error {
+    background-color: rgba(255, 48, 48, 0.74) !important;
+}
+
+.drag-area.completed {
+    border: 3px solid #fff;
+}
+
+.drag-area .icon {
+    font-size: 100px;
+    color: #fff;
+}
+
+.text-mask {
+    height: 50px;
+    /* Increased to give 30px font more room */
+    overflow: hidden;
+    margin-bottom: 5px;
+    position: relative;
+    width: 100%;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+}
+
+.text-mask .text-slide {
+    position: absolute;
+    top: 0;
+    /* Ensure it starts at the top edge */
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Fill the container */
+    text-align: center;
+    font-size: 30px;
+    font-weight: 500;
+    color: #fff;
+    /* Match new container height */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateY(100%);
+    margin: 0;
+}
+
+.text-slide.active {
+    transform: translateY(0);
+    /* Center */
+}
+
+.text-slide.exit {
+    transform: translateY(-100%);
+    /* Top */
+}
+
+.drag-area span {
+    font-size: 25px;
+    font-weight: 500;
+    color: #fff;
+    margin: 10px 0 15px 0;
+}
+
+.drag-area button,
+.loginBtn {
+    padding: 10px 25px;
+    font-size: 20px;
+    font-weight: 500;
+    border: none;
+    outline: none;
+    background: #fff;
+    color: var(--bg-color);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.5s;
+}
+
+.drag-area button:hover {
+    background: rgb(228, 220, 220);
+}
+
+.drag-area button:disabled {
+    background: lightgrey;
+    color: darkgray;
+}
+
+.drag-area img.preview {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    border-radius: 5px;
+}
+
+
+
+@media (max-width: 745px) {
+
+    .drag-area button {
+        padding: 8px 20px;
+        font-size: 18px;
+        font-weight: 450;
+    }
+
+    .drag-area {
+        height: 400px;
+        width: 450px;
+    }
+
+    .drag-area header {
+        font-size: 25px;
+        font-weight: 450;
+        color: #fff;
+    }
+
+    .drag-area .icon {
+        font-size: 80px;
+    }
+
+}
+
+
+
+.footer {
+    margin-top: 30px;
+    padding: 5px;
+    border: 2px dashed #fff;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+}
+
+.footer {
+    text-decoration: none;
+    color: aliceblue;
+    transition: all 0.5s;
+}
+
+.footer:hover {
+    color: rgb(185, 203, 192);
+}
+
+
+
+
+.fslabel {
+    font-weight: 500;
+    color: #fff;
+    margin: 10px 0 15px 0;
+}
+
+
+.drag-area:not(.completed) {
+    /* Removed old gradient border hack */
+    border: none;
+    border-radius: 50px;
+    position: relative;
+    /* Required for absolute positioning of SVG */
+}
+
+
+/* SVG Border Styles */
+.border-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    /* IMPORTANT: Lets clicks pass through to the drop zone */
+    z-index: 1;
+}
+
+.dashed-border {
+    stroke: #fff;
+    stroke-width: 4;
+    stroke-dasharray: 20 15;
+    /* Fallback */
+    stroke-linecap: round;
+    animation: borderMarch 1s linear infinite;
+    animation-play-state: paused;
+}
+
+.drag-area.active .dashed-border {
+    animation-play-state: running;
+}
+
+@keyframes borderMarch {
+    100% {
+        stroke-dashoffset: var(--dash-offset, -35);
+        /* 20+15 = 35 */
+    }
+}
+
+@keyframes rotateCog {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+
+#uploading .drag-area {
+    animation: linearGradientMove .7s infinite linear;
+}
+
+.skill {
+    width: 160px;
+    height: 160px;
+    background-color: transparent;
+    position: relative;
+    border-radius: 50%;
+}
+
+.inner {
+    width: 120px;
+    height: 120px;
+    border: 1px solid aqdua;
+    border-radius: 50%;
+    box-shadow: inset 4px 4px 6px -1px rgba(0, 0, 0, 0.2),
+        0.5px 0.5px 0px rgba(0, 0, 0, 0.15);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.outer {
+    width: 160px;
+    height: 160px;
+    padding: 20px;
+    box-shadow: 6px 6px 10px -1px rgba(0, 0, 0, 0.2),
+        -0.5px -0.5px 0px rgba(0, 0, 0, 0.15);
+
+    border-radius: 50%;
+}
+
+.num {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+
+}
+
+.circle {
+    fill: none;
+    stroke-width: 20px;
+}
+
+.circleBg {
+    stroke: #fff;
+    stroke-width: 19px;
+}
+
+.circleBar {
+    stroke: url(#GradientColor);
+    stroke-dasharray: 450;
+    stroke-dashoffset: 450;
+    transition: 0.7s linear all;
+}
+
+svg.circle {
+    transform: rotate(-90deg) scale(1, 1);
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+
+#form {
+    border: 2px dashed #fff;
+    height: 500px;
+    width: 700px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    transition: all 0.5s;
+    justify-content: space-evenly;
+}
+
+#form form {
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    transition: all 0.5s;
+}
+
+#form h1 {
+    font-size: 60px;
+    font-weight: 500;
+    color: #fff;
+}
+
+#form input {
+    padding: 10px 25px;
+    font-size: 20px;
+    font-weight: 500;
+    border: none;
+    outline: none;
+    background: #fff;
+    color: #5256ad;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.5s;
+    margin: 10px;
+}
+
+#form button {
+    font-size: 30px;
+    font-weight: 700;
+    padding: 7px 15px;
+}
