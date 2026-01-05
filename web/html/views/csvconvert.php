@@ -7,7 +7,7 @@ require __ROOT__ . '/functions/solver.php';
 $TITLE = "Festa dello Sport";
 $YEAR = "2025";
 
-$DEBUG = false; // Set to true to enable debug data output
+$DEBUG = true; // Set to true to enable debug data output
 
 use setasign\Fpdi\Fpdi;
 
@@ -99,8 +99,8 @@ $DEB_csv_end = microtime(true); // End timing CSV parsing
 $DEB_solver_start = microtime(true); // Start timing solver
 $result = (_SOLVER_solve($data, $csvArray)); // Call the solver function with the data
 
-if ($result['total guests'] > $result['total assigneable']) {
-    die("Error: Not enough space for the guests. Total guests: " . $result['total guests'] . ", Total tables: " . $result['total assigneable']);
+if ($result['total guests'] > $result['total assignable']) {
+    die("Error: Not enough space for the guests. Total guests: " . $result['total guests'] . ", Total tables: " . $result['total assignable']);
 }
 $DEB_solver_end = microtime(true); // End timing solver
 
