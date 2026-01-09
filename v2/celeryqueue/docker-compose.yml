@@ -1,0 +1,28 @@
+
+services:
+  # 1. Il Broker (Redis)
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  # 2. Il Server Web (Flask)
+  web:
+    build: .
+    command: python server.py
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+    volumes:
+      - .:/app  # Hot-reload: se cambi codice sul PC, cambia nel container
+
+  # 3. Il Worker (Celery)
+  worker:
+    build: .
+    # Questo comando avvia Celery invece di Flask
+    command: celery -A tasks worker --loglevel=info
+    depends_on:
+      - redis
+    volumes:
+      - .:/app

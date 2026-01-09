@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<!-- Coding By Ali Aslan -->
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GS - Elenco Simulazioni</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/fonts/remixicon.min.css">
+</head>
+
+<body>
+    <div id="simTable" class="drag-area">
+        <h1>Elenco Simulazioni</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Assegnamenti</th>
+                    <th>Stato</th>
+                    <th>Azioni</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- Le righe della tabella verranno aggiunte dinamicamente qui -->
+                <tr>
+                    <td>1</td>
+                    <td class="err">8/16</td>
+                    <td><i class="ri-loader-2-line jobIcon execJob"></i></td>
+                    <td><button><i class="ri-eye-line"></i></button><button><i class="ri-delete-bin-line"></i></button></td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td class="err">6/12</td>
+                    <td><i class="ri-file-close-line jobIcon failJob"></i></td>
+                    <td><button><i class="ri-eye-line"></i></button><button><i class="ri-delete-bin-line"></i></button></td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td class="ok">10/10</td>
+                    <td><i class="ri-file-check-line jobIcon doneJob"></i></td>
+                    <td><button><i class="ri-eye-line"></i></button><button><i class="ri-delete-bin-line"></i></button></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>

@@ -14,6 +14,7 @@ body {
     justify-content: center;
     min-height: 100vh;
     background: var(--bg-color);
+    flex-direction: column;
     /* #5a5fbb */
 }
 
@@ -110,7 +111,7 @@ body {
     margin: 10px 0 15px 0;
 }
 
-.drag-area button,
+button,
 .loginBtn {
     padding: 10px 25px;
     font-size: 20px;
@@ -124,11 +125,11 @@ body {
     transition: all 0.5s;
 }
 
-.drag-area button:hover {
+button:hover {
     background: rgb(228, 220, 220);
 }
 
-.drag-area button:disabled {
+button:disabled {
     background: lightgrey;
     color: darkgray;
 }
@@ -144,7 +145,7 @@ body {
 
 @media (max-width: 745px) {
 
-    .drag-area button {
+    button {
         padding: 8px 20px;
         font-size: 18px;
         font-weight: 450;
@@ -154,6 +155,7 @@ body {
         height: 400px;
         width: 450px;
     }
+    
 
     .drag-area header {
         font-size: 25px;
@@ -359,4 +361,66 @@ svg.circle {
     font-size: 30px;
     font-weight: 700;
     padding: 7px 15px;
+}
+
+
+#simTable {
+    border: 2px solid #fff;
+    border-radius: 10px;
+    color: #fff;
+    width: fit-content;
+    height: fit-content;
+    margin-top: 20px;
+    margin-bottom: 40px;
+    box-shadow: 4px 4px 10px -1px rgba(0, 0, 0, 0.2),
+        -0.5px -0.5px 0px rgba(0, 0, 0, 0.15);
+
+}
+
+#simTable th, #simTable td {
+    padding: 10px 15px;
+    text-align: center;
+}
+
+#simTable th {
+    background-color: #005f61;
+}
+
+#simTable tr:nth-child(even) {
+    background-color: #007876;
+}
+#simTable tr:nth-child(odd) {
+    background-color: #009185;
+}
+
+td.err {
+    color: #850000;
+    font-weight: bolder;
+}
+
+td.ok {
+    color: #1b4b24;
+    font-weight: bolder;
+}
+
+
+
+.jobIcon {
+    font-size: 2.5em;
+}
+.execJob::before {
+    content: "";
+    display: inline-block;
+    animation: rotateCog 3s infinite linear;
+}
+
+.failJob {
+    color: #ff4d4d;
+}
+
+#tableBody button {
+    margin: 0 5px;
+    padding: 5px 10px;
+    
+    aspect-ratio: 1;
 }

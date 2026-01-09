@@ -1,0 +1,4 @@
+flask
+celery
+redis
+mip==1.14.2
