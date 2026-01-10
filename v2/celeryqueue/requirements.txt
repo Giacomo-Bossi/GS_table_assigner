@@ -1,4 +1,5 @@
 flask
+flask-cors
 celery
 redis
-mip==1.14.2
+mip

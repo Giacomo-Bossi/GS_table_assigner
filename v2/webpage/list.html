@@ -8,9 +8,12 @@
     <title>GS - Elenco Simulazioni</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/fonts/remixicon.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="list.js" defer></script>
 </head>
 
 <body>
+    <button id="newSimBtn" onclick="window.location.href='index.html'">Nuova Simulazione <i class="ri-add-circle-line"></i></button>
     <div id="simTable" class="drag-area">
         <h1>Elenco Simulazioni</h1>
         <table>
@@ -24,7 +27,7 @@
             </thead>
             <tbody id="tableBody">
                 <!-- Le righe della tabella verranno aggiunte dinamicamente qui -->
-                <tr>
+                <!-- <tr>
                     <td>1</td>
                     <td class="err">8/16</td>
                     <td><i class="ri-loader-2-line jobIcon execJob"></i></td>
@@ -41,7 +44,7 @@
                     <td class="ok">10/10</td>
                     <td><i class="ri-file-check-line jobIcon doneJob"></i></td>
                     <td><button><i class="ri-eye-line"></i></button><button><i class="ri-delete-bin-line"></i></button></td>
-                </tr>
+                </tr> -->
             </tbody>
         </table>
     </div>

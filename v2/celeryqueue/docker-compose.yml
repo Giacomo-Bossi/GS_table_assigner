@@ -9,7 +9,7 @@ services:
   # 2. Il Server Web (Flask)
   web:
     build: .
-    command: python server.py
+    command: python -u server.py
     ports:
       - "5000:5000"
     depends_on:

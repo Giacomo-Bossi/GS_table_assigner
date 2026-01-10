@@ -364,6 +364,12 @@ svg.circle {
 }
 
 
+#newSimBtn, #simListBtn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+}
+
 #simTable {
     border: 2px solid #fff;
     border-radius: 10px;
