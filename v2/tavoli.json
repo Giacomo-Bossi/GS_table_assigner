@@ -290,8 +290,7 @@
             "x": 907,
             "y": 98,
             "width": 35,
-            "height": 183,
-            "head_on": "END"
+            "height": 183
         },
         "tags": {
             "group": 4
@@ -305,8 +304,7 @@
             "x": 975,
             "y": 98,
             "width": 35,
-            "height": 183,
-            "head_on": "END"
+            "height": 183
         },
         "tags": {
             "group": 4
@@ -320,8 +318,7 @@
             "x": 375,
             "y": 490,
             "width": 35,
-            "height": 183,
-            "head_on": "END"
+            "height": 183
         },
         "tags": {
             "group": 5
@@ -335,8 +332,7 @@
             "x": 443,
             "y": 490,
             "width": 35,
-            "height": 183,
-            "head_on": "END"
+            "height": 183
         },
         "tags": {
             "group": 5
@@ -350,8 +346,7 @@
             "x": 512,
             "y": 490,
             "width": 35,
-            "height": 183,
-            "head_on": "END"
+            "height": 183
         },
         "tags": {
             "group": 5
@@ -365,8 +360,7 @@
             "x": 581,
             "y": 490,
             "width": 35,
-            "height": 183,
-            "head_on": "END"
+            "height": 183
         },
         "tags": {
             "group": 5
@@ -380,8 +374,7 @@
             "x": 650,
             "y": 490,
             "width": 35,
-            "height": 183,
-            "head_on": "END"
+            "height": 183
         },
         "tags": {
             "group": 5
@@ -395,8 +388,7 @@
             "x": 718,
             "y": 490,
             "width": 35,
-            "height": 183,
-            "head_on": "END"
+            "height": 183
         },
         "tags": {
             "group": 5
@@ -410,8 +402,7 @@
             "x": 787,
             "y": 551,
             "width": 35,
-            "height": 122,
-            "head_on": "END"
+            "height": 122
         },
         "tags": {
             "group": 5
