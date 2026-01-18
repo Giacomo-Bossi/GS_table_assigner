@@ -235,6 +235,30 @@ button:disabled {
     animation-play-state: running;
 }
 
+.drag-area.finish .dashed-border {
+    animation: dashExpand 1.5s forwards;
+    stroke-dashoffset: var(--expanding-dashoffset, 0);
+    animation-fill-mode: forwards;
+    animation-play-state: running;
+}
+
+@property --expanding-dashoffset {
+  syntax: '<number>'; 
+  initial-value: 0;
+  inherits: false;
+}
+
+@keyframes dashExpand {
+    0% {
+        stroke-dasharray: 20 15;
+        --expanding-dashoffset: var(--dash-offset, 0);
+    }
+    100% {
+        stroke-dasharray: 35 0;
+        --expanding-dashoffset: calc(var(--dash-offset, 0) + 7.5);
+    }
+}
+
 @keyframes borderMarch {
     100% {
         stroke-dashoffset: var(--dash-offset, -35);

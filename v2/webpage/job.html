@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<!-- Coding By Ali Aslan -->
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GS - Task status</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div>
+        <div class="drag-area" >
+            <svg class="border-overlay" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)" rx="50" ry="50" fill="none"
+                    class="dashed-border" />
+            </svg>
+            <div class="text-mask">
+                <span class="text-slide active">Stato del lavoro</span>
+                <span class="text-slide next"></span>
+            </div>
+        </div>
+    </div>
+    <br><button id="simListBtn" onclick="document.location.href='index.html';" >Nuova simulazione</button>
+    
+    <script src="dashedborder.js"></script>
+</body>
+
+</html>
