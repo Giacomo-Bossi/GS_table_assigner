@@ -1,6 +1,7 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from tasks import run_mip_task
+from renderer import EventInfo, generaSegnaposti
 
 app = Flask(__name__)
 CORS(app)
@@ -30,6 +31,24 @@ def get_status(task_id):
 @app.get("/jobs")
 def list_all_jobs():
     return jsonify({"jobs": list_jobs}), 200
+
+@app.get("/download/<task_id>/map")
+def download_map(task_id):
+    data = "" 
+    return Response(data, mimetype='application/pdf', headers={"Content-Disposition": "attachment;filename=mappa_{}.pdf".format(task_id)})
+
+
+@app.get("/download/<task_id>/placeholders")
+def download_placeholders(task_id):
+    event = EventInfo("Festa", "d'inverno", "2026", "Sabato 31 Gennaio 2026")
+    task = run_mip_task.AsyncResult(task_id)
+    if task.state != 'SUCCESS':
+        return jsonify({"error": "Task not completed"}), 400
+    gruppi = task.result.get("groups", [])
+    prenotazioni = [(g.get("show_name", "Ospite " + str(i)), g.get("size", 1)) for i, g in enumerate(gruppi)]
+
+    data = generaSegnaposti(prenotazioni, event)
+    return Response(data, mimetype='application/pdf', headers={"Content-Disposition": "attachment;filename=segnaposti_{}.pdf".format(task_id)})
 
 @app.errorhandler(404)
 def page_not_found(e):

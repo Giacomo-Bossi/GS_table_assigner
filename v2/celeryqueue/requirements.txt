@@ -3,3 +3,4 @@ flask-cors
 celery
 redis
 mip
+fpdf2

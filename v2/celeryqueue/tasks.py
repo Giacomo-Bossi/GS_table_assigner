@@ -123,5 +123,6 @@ def run_mip_task(self, tables: dict, guests: dict) -> dict:
         "total assignable": sum(
             group_sizes[i] for i in G
             if any(assign[i][j].x >= 0.99 for j in T)
-        )
+        ),
+        "groups": guests
     }
