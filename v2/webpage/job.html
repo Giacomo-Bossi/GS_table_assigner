@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GS - Task status</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/fonts/remixicon.min.css">
 </head>
 
 <body>
@@ -20,11 +21,14 @@
                 <span class="text-slide active">Stato del lavoro</span>
                 <span class="text-slide next"></span>
             </div>
+            <br class="lo_sp"><br class="lo_sp"><span class="loader-job"></span><br class="lo_sp"><br class="lo_sp">
+            <span id="jobStatusText">Esecuzione in corso...</span>
+            <p id="jobProgressText" ><!-- 0/556 posti assegnati --></p>
         </div>
     </div>
     <br><button id="simListBtn" onclick="document.location.href='index.html';" >Nuova simulazione</button>
     
-    <script src="dashedborder.js"></script>
+    <script src="scripts/dashedborder.js"></script>
+    <script src="scripts/job.js"></script>
 </body>
-
 </html>

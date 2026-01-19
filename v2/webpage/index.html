@@ -35,38 +35,11 @@
             <span>OPPURE</span>
             <button id="browseButton">Seleziona un file</button>
             <input type="file" name="file" id="file" hidden>
-            <div id="two" hidden>
-                <div class="skill">
-                    <div class="outer">
-                        <div class="inner">
-                            <div class="num">0%</div>
-                            <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="160px" height="160px"
-                                class="circle">
-                                <circle cx="80" cy="80" r="70" stroke-linecap="round" class="circleBg" />
-                            </svg>
-                            <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="160px" height="160px"
-                                class="circle">
-                                <defs>
-                                    <linearGradient id="GradientColor">
-                                        <stop offset="0%" stop-color="#DA22FF" />
-                                        <stop offset="100%" stop-color="#9733EE" />
-                                    </linearGradient>
-                                </defs>
-                                <circle cx="80" cy="80" r="70" stroke-linecap="round" class="circleBar" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-                <br>
-                <p id="sizeUploaded">Uploading...</p>
-                <br>
-                <!--<div class="progress" style="background:orange; transition: all 1s" >HEY</div>-->
-                <button onclick="window.location.reload();" id="cancelBtn">Cancel</button>
-            </div>
         </div>
     </div>
     <div id="uploading" style="display:none">
         <div class="drag-area">
+            <span>Creazione task</span>
             <div class="skill">
                 <div class="outer">
                     <div class="inner">
@@ -89,7 +62,7 @@
                 </div>
             </div>
             <br>
-            <p id="sizeUploaded">Uploading...</p>
+            <p id="jobState" ></p>
             <br>
             <!--<div class="progress" style="background:orange; transition: all 1s" >HEY</div>-->
             <button onclick="window.location.reload();" id="cancelBtn">Cancel</button>
@@ -97,9 +70,9 @@
     </div>
     <!-- <br><button id="simListBtn" onclick="document.location.href='list.html';" >Elenco simulazioni</button> -->
 
-    <script src="dashedborder.js"></script>
-    <script src="script.js"></script>
-    <script src="csvconvert.js"></script>
+    <script src="scripts/dashedborder.js"></script>
+    <script src="scripts/script.js"></script>
+    <script src="scripts/csvconvert.js"></script>
 </body>
 
 </html>

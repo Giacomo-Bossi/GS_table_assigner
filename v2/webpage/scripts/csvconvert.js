@@ -16,31 +16,49 @@ async function createJob(file) {
     };
 }
 
+const PRESOLVER_PERC_WEIGHT = 50;
 async function jobCall(gruppiData, tavoliData) {
     // presolver
-      /* [EMPTY] */ 
+    try {
+        
+        /* [EMPTY] */ 
 
-    // external solver call
-    const response = await fetch('http://localhost:5000/start_job', { // [TODO] replace with actual solver URL
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            groups: gruppiData,
-            tables: tavoliData.map(t => ({table_id: t.table_id, capacity: t.capacity, head_seats: t.head_seats || 0}))
-        })
-    });
-    const result = await response.json();
-    if (!response.ok) {
-        alert("Error creating job: " + result.message);
+
+    
+        changeProgressBar(PRESOLVER_PERC_WEIGHT);
+    } catch (e) {
+        alert("Error during presolver: " + e.message);
+        window.location.reload();
         return;
     }
+    // external solver call
+    try {
+        const response = await fetch('http://localhost:5000/start_job', { // [TODO] replace with actual solver URL
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                groups: gruppiData,
+                tables: tavoliData.map(t => ({table_id: t.table_id, capacity: t.capacity, head_seats: t.head_seats || 0}))
+            })
+        });
+        const result = await response.json();
+        if (!response.ok) {
+            alert("Error creating job: " + result.message);
+            return;
+        }
 
-    const jobId = result.task_id;
-    console.log("Job id:", jobId);
+        const jobId = result.task_id;
+        console.log("Job id:", jobId);
 
-    window.location.href = "job.html?job_id=" + jobId;
+        changeProgressBar(100);
+        window.location.href = "job.html?job_id=" + jobId;
+    } catch (e) {
+        alert("Error during job creation: " + e.message);
+        window.location.reload();
+        return;
+    }
 
 }
 

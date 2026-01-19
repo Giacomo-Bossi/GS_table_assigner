@@ -19,7 +19,7 @@ function fixDashedBorder() {
     const desiredDash = dashArray[0];
     const desiredGap = dashArray[1];
     const desiredCycle = desiredDash + desiredGap;
-    console.log("Desired dash/gap:", desiredDash, desiredGap);
+    //console.log("Desired dash/gap:", desiredDash, desiredGap);
 
     // 3. Calculate how many full cycles fit into the length
     const count = Math.round(length / desiredCycle);

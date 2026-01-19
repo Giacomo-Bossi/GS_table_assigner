@@ -172,7 +172,7 @@ let progress = document.getElementsByClassName("progress")[0];
 function updateProgress(e) {
     //    progress.style.width = (((e.loaded/e.total)*100))+ "%";
     changeProgressBar(Math.floor((e.loaded / e.total) * 100));
-    document.getElementById("sizeUploaded").textContent = bytesToSize(e.loaded) + " / " + bytesToSize(e.total);
+    document.getElementById("jobState").textContent = bytesToSize(e.loaded) + " / " + bytesToSize(e.total);
 }
 
 
