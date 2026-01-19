@@ -102,7 +102,7 @@ def run_mip_task(self, tables: dict, guests: dict) -> dict:
         - table_penalty * mip.xsum(used[j] for j in T)
     )
     model.cuts_generator = CeleryUpdater(model, self, T, G, group_sizes)
-    model.optimize(relax=False, max_seconds=30)
+    model.optimize(relax=False, max_seconds=600)
 
 
     # Output

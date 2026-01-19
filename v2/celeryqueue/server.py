@@ -31,6 +31,10 @@ def get_status(task_id):
 def list_all_jobs():
     return jsonify({"jobs": list_jobs}), 200
 
+@app.errorhandler(404)
+def page_not_found(e):
+    return jsonify({"error": "Endpoint not found"}), 404
+
 if __name__ == '__main__':
     # Importante: host 0.0.0.0 per essere visibile fuori da Docker
     app.run(host='0.0.0.0', port=5000)
