@@ -23,13 +23,27 @@ function fetchJobStatus() {
                 document.getElementById("jobProgressText").textContent = `Assegnati: ${result["total assignable"]} / ${result["total guests"]} (${result["total seats"]} posti)`;
                 let area = document.querySelector(".drag-area");
 
-                let showButton = document.createElement("button");
-                showButton.innerHTML = "<i class=\"ri-eye-line\"></i>";
-                showButton.onclick = function() {
-                    window.location.href = `render.html?job_id=${job_id}`;
+                let dlPlaceholdersBtn = document.createElement("button");
+                dlPlaceholdersBtn.innerHTML = `<i class="ri-file-paper-2-fill"></i>`;
+                dlPlaceholdersBtn.onclick = function() {
+                    window.location.href = `http://localhost:5000/download/${job_id}/placeholders`;
                 };
+
+                let dlMapBtn = document.createElement("button");
+                dlMapBtn.innerHTML = `<i class="ri-treasure-map-line"></i>`;
+                dlMapBtn.onclick = function() {
+                    window.location.href = `http://localhost:5000/download/${job_id}/map`;
+                };
+
+                let buttonsContainer = document.createElement("div");
+                buttonsContainer.style.display = "flex";
+                buttonsContainer.style.flexDirection = "row";
+                buttonsContainer.style.gap = "10px";
+                buttonsContainer.appendChild(dlPlaceholdersBtn);
+                buttonsContainer.appendChild(dlMapBtn);
+
                 area.appendChild(document.createElement("br"));
-                area.appendChild(showButton);
+                area.appendChild(buttonsContainer);
                 
 
             } else if (data.status === "PROCESSING") {

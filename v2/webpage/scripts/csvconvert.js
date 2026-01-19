@@ -40,7 +40,7 @@ async function jobCall(gruppiData, tavoliData) {
             },
             body: JSON.stringify({
                 groups: gruppiData,
-                tables: tavoliData.map(t => ({table_id: t.table_id, capacity: t.capacity, head_seats: t.head_seats || 0}))
+                tables: tavoliData.map(t => ({table_id: t.table_id, capacity: t.capacity, head_seats: t.head_seats || 0, show_name: t.show_name || ""}))
             })
         });
         const result = await response.json();
@@ -76,11 +76,15 @@ function generateGruppiJSON(csvString) {
     }
     
     // Parse header row
-    const headers = lines[0].split(';').map(header => header.trim());
-    
+    let start = 0
+    if(lines[0].startsWith("ID;GIORNO;NOME;POSTI;NOTE;CAPO")){ 
+        //const headers = lines[0].split(';').map(header => header.trim());
+        start = 1; // skip header
+    }
+
     // Parse data rows
     const data = [];
-    for (let i = 1; i < lines.length; i++) {
+    for (let i = start; i < lines.length; i++) {
         const values = lines[i].split(';').map(value => value.trim());
         console.log("Parsing line:", values.length, "values");
         if(values.length < 6) {
