@@ -4,3 +4,4 @@ celery
 redis
 mip
 fpdf2
+pypdf

@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from tasks import run_mip_task
-from renderer import EventInfo, generaSegnaposti
+from renderer import EventInfo, generaSegnaposti, generaMappa
 
 app = Flask(__name__)
 CORS(app)
@@ -19,6 +19,7 @@ def start_job():
 @app.get("/status/<task_id>")
 def get_status(task_id):
     task = run_mip_task.AsyncResult(task_id)
+    print(f"Task {task_id} state: {task.state}")
     if task.state == 'SUCCESS':
         return jsonify({"status": "COMPLETED", "result": task.result})
     elif task.state == 'PENDING':
@@ -34,8 +35,17 @@ def list_all_jobs():
 
 @app.get("/download/<task_id>/map")
 def download_map(task_id):
-    data = "" 
-    return Response(data, mimetype='application/pdf', headers={"Content-Disposition": "attachment;filename=mappa_{}.pdf".format(task_id)})
+    task = run_mip_task.AsyncResult(task_id)
+    if task.state != 'SUCCESS':
+        return jsonify({"error": "Task not completed"}), 400
+    gruppi = task.result.get("groups", [])
+    assegnazioni = task.result.get("assignments", [])
+    try:
+        assegnazioni_tuples = [(a['group_id'], a['table_id']) for a in assegnazioni]
+        data = generaMappa(assegnazioni, gruppi, title="FESTA D'INVERNO 2026")
+        return Response(data, mimetype='application/pdf', headers={"Content-Disposition": "attachment;filename=mappa_{}.pdf".format(task_id)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.get("/download/<task_id>/placeholders")
@@ -53,6 +63,10 @@ def download_placeholders(task_id):
 @app.errorhandler(404)
 def page_not_found(e):
     return jsonify({"error": "Endpoint not found"}), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == '__main__':
     # Importante: host 0.0.0.0 per essere visibile fuori da Docker
