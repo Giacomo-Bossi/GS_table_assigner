@@ -5,6 +5,10 @@ nogit-*
 
 vendor/
 
+## Ignores __ (test files)
+__* 
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

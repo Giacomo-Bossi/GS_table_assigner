@@ -39,9 +39,8 @@ def download_map(task_id):
     if task.state != 'SUCCESS':
         return jsonify({"error": "Task not completed"}), 400
     gruppi = task.result.get("groups", [])
-    assegnazioni = task.result.get("assignments", [])
+    assegnazioni = task.result.get("pairings", [])
     try:
-        assegnazioni_tuples = [(a['group_id'], a['table_id']) for a in assegnazioni]
         data = generaMappa(assegnazioni, gruppi, title="FESTA D'INVERNO 2026")
         return Response(data, mimetype='application/pdf', headers={"Content-Disposition": "attachment;filename=mappa_{}.pdf".format(task_id)})
     except Exception as e:

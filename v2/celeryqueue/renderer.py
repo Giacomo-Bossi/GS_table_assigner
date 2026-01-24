@@ -2,6 +2,7 @@ from math import ceil
 from pathlib import Path
 from io import BytesIO
 import json
+import random
 
 from fpdf import Template, FPDF
 from pypdf import PdfWriter, PdfReader
@@ -72,6 +73,9 @@ def generaMappa(
     pdf = FPDF(unit="pt", format=(width, height))
     pdf.add_font("verdana", style="", fname="renderResources/Verdana.ttf", uni=True)
     pdf.add_page()
+    
+## START DRAW LOGIC
+
     pdf.set_fill_color(255, 255, 255)
     pdf.rect(x=width-75, y=270, w=40, h=607, style='F')
 
@@ -84,15 +88,14 @@ def generaMappa(
     text = title
     w_text = pdf.get_string_width(text)
     with pdf.rotation(270, width-72, 350):
-        pdf.text(x=width+150- w_text/2, y=351 , text=text)
-    
-## START DRAW LOGIC
+        pdf.text(x=width+150- w_text/2, y=351 , text=text) # Titolo centrato
+
     for table in tavoli_def:
         y = table['gui']['x']
         x = width - table['gui']['y']
         height_t = table['gui']['width']
         width_t = -table['gui']['height']
-        pdf.rect(x=x, y=y, w=width_t, h=height_t, style='D')
+        
 
         vpl = ceil((table["capacity"] - table["head_seats"])/2)
         pdf.set_fill_color(200, 200, 200)
@@ -110,13 +113,86 @@ def generaMappa(
 
                 pdf.rect(x=x+width_t-3, y=y+((height_t-12)/2), w=3, h=12, style='FD')
 
-
-        pdf.set_font("Arial", size=12)
-        pdf.set_text_color(0, 0, 0)
+        postiADestra = vpl # posti a destra (non considerando la formazione di 3 posti per la testa (gestito separatamente))
+        postiASinistra = table["capacity"] - postiADestra # posti a sinistra (non considerando la formazione di 3 posti per la testa (gestito separatamente))
+        testaA3 = False # indica se il tavolo ha la testa con la formazione a 3 posti
+        if table["head_seats"] > 0:
+            postiASinistra -= 2
+            postiADestra -= 1
+            testaA3 = True
+            testaA3posti = [False, False, False]  # indica se i posti della testa sono stati assegnati (destra, centro, sinistra)
+        assegnatiADestra = 0
+        assegnatiASinistra = 0
         
-        with pdf.rotation(270, x + width_t/2, y + height_t/2):
-            pdf.text(x=x + width_t/2 - 10, y=y + height_t/2, text=str(table['table_id']))
 
+        # for gruppo_id in assegnazioni[str(table['table_id']-1)]:
+        #     gruppo = gruppi[gruppo_id]
+        #     print(" - Group ", gruppo_id, ": ", gruppo['show_name'], " (size ", gruppo['size'], ")")
+        #     color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        #     pdf.set_fill_color(*color)
+
+        #     gruppoADestra = ceil(gruppo['size']/2)
+        #     gruppoASinistra = gruppo['size'] - gruppoADestra
+            
+        #     pdf.rect(x=x, y=y, w=-15.23*gruppoADestra, h=height_t/2, style='F')
+        #     pdf.rect(x=x, y=y+height_t/2, w=-15.23*gruppoASinistra, h=height_t/2, style='F')
+
+        #     break
+
+        ## render dei gruppi colorati dei gruppi assegnati al tavolo
+        gruppiTavolo = assegnazioni[str(table['table_id']-1)] #gruppi assegnati a questo tavolo
+        gruppiTavolo = sorted(gruppiTavolo, key=lambda gid: (gruppi[gid].get('require_head', 0) == 0, gruppi[gid]['size'] % 2, gruppi[gid]['size']), reverse=True) # ordino per dimensione decrescente (prima i gruppi dispari, alla fine sempre quelli che richiedono testa)
+        postiLiberi = table["capacity"] - sum([gruppi[gid]['size'] for gid in gruppiTavolo])
+
+        lato = 0 # 0 = sinistra, 1 = destra
+        for gid in gruppiTavolo:
+            gruppo = gruppi[gid]
+            color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+            pdf.set_fill_color(*color)
+            gruppoADestra = ceil(gruppo['size']/2)
+            gruppoASinistra = gruppo['size'] - gruppoADestra
+            # Controllo se il gruppo richiede la testa
+            # if gruppo.get('require_head', 0) == 1 and testaA3:
+            #     # Assegno 2 posti alla testa
+            #     pdf.rect(x=x, y=y+((height_t-12)/2), w=-15.23*2, h=12, style='F')
+            #     gruppoASinistra -= 2
+            #     testaA3 = False # la testa è stata assegnata
+
+            for l in range(gruppo["size"]):
+                if lato == 0 and assegnatiASinistra < postiASinistra:
+                    pdf.rect(x=x-15.23*assegnatiASinistra, y=y+height_t/2, w=-15.23, h=height_t/2, style='F')
+                    assegnatiASinistra += 1
+                    lato = 1
+                elif lato == 1 and assegnatiADestra < postiADestra:
+                    pdf.rect(x=x-15.23*assegnatiADestra, y=y, w=-15.23, h=height_t/2, style='F')
+                    assegnatiADestra += 1
+                    lato = 0
+                else:
+                    # non ci sono più posti su questo lato, cambio lato
+                    lato = 1 - lato
+                    if lato == 0 and assegnatiASinistra < postiASinistra:
+                        pdf.rect(x=x-15.23*assegnatiASinistra, y=y+height_t/2, w=-15.23, h=height_t/2, style='F')
+                        assegnatiASinistra += 1
+                    elif lato == 1 and assegnatiADestra < postiADestra:
+                        pdf.rect(x=x-15.23*assegnatiADestra , y=y, w=-15.23, h=height_t/2, style='F')
+                        assegnatiADestra += 1
+
+
+            
+        
+        
+
+
+
+
+        
+        # pdf.set_font("Arial", size=12)
+        # pdf.set_text_color(0, 0, 0)
+        
+        # with pdf.rotation(270, x + width_t/2, y + height_t/2):
+        #     pdf.text(x=x + width_t/2 - 10, y=y + height_t/2, text=str(table['table_id']))
+
+        pdf.rect(x=x, y=y, w=width_t, h=height_t, style='D')
 
     
 ## END DRAW LOGIC
