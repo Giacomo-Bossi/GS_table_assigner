@@ -4,8 +4,8 @@
         "capacity": 56,
         "head_seats": 0,
         "gui": {
-            "x": 123,
-            "y": 98,
+            "x": 317.91999999999996,
+            "y": 123,
             "width": 35,
             "height": 426
         },
@@ -18,8 +18,8 @@
         "capacity": 56,
         "head_seats": 0,
         "gui": {
-            "x": 191,
-            "y": 98,
+            "x": 317.91999999999996,
+            "y": 191,
             "width": 35,
             "height": 426
         },
@@ -32,8 +32,8 @@
         "capacity": 8,
         "head_seats": 0,
         "gui": {
-            "x": 260,
-            "y": 98,
+            "x": 682.92,
+            "y": 260,
             "width": 35,
             "height": 61
         },
@@ -47,8 +47,8 @@
         "capacity": 8,
         "head_seats": 0,
         "gui": {
-            "x": 328,
-            "y": 98,
+            "x": 682.92,
+            "y": 328,
             "width": 35,
             "height": 61
         },
@@ -62,8 +62,8 @@
         "capacity": 8,
         "head_seats": 0,
         "gui": {
-            "x": 396,
-            "y": 98,
+            "x": 682.92,
+            "y": 396,
             "width": 35,
             "height": 61
         },
@@ -77,8 +77,8 @@
         "capacity": 8,
         "head_seats": 0,
         "gui": {
-            "x": 465,
-            "y": 98,
+            "x": 682.92,
+            "y": 465,
             "width": 35,
             "height": 61
         },
@@ -92,8 +92,8 @@
         "capacity": 8,
         "head_seats": 0,
         "gui": {
-            "x": 534,
-            "y": 98,
+            "x": 682.92,
+            "y": 534,
             "width": 35,
             "height": 61
         },
@@ -107,8 +107,8 @@
         "capacity": 8,
         "head_seats": 0,
         "gui": {
-            "x": 602,
-            "y": 98,
+            "x": 682.92,
+            "y": 602,
             "width": 35,
             "height": 61
         },
@@ -122,8 +122,8 @@
         "capacity": 8,
         "head_seats": 0,
         "gui": {
-            "x": 670,
-            "y": 98,
+            "x": 682.92,
+            "y": 670,
             "width": 35,
             "height": 61
         },
@@ -137,8 +137,8 @@
         "capacity": 8,
         "head_seats": 0,
         "gui": {
-            "x": 739,
-            "y": 98,
+            "x": 682.92,
+            "y": 739,
             "width": 35,
             "height": 61
         },
@@ -152,8 +152,8 @@
         "capacity": 32,
         "head_seats": 0,
         "gui": {
-            "x": 260,
-            "y": 203,
+            "x": 394.91999999999996,
+            "y": 260,
             "width": 35,
             "height": 244
         },
@@ -166,8 +166,8 @@
         "capacity": 27,
         "head_seats": 1,
         "gui": {
-            "x": 328,
-            "y": 204,
+            "x": 423.91999999999996,
+            "y": 328,
             "width": 35,
             "height": 214,
             "head_on": "END"
@@ -181,8 +181,8 @@
         "capacity": 27,
         "head_seats": 1,
         "gui": {
-            "x": 396,
-            "y": 204,
+            "x": 423.91999999999996,
+            "y": 396,
             "width": 35,
             "height": 214,
             "head_on": "END"
@@ -197,8 +197,8 @@
         "capacity": 27,
         "head_seats": 1,
         "gui": {
-            "x": 465,
-            "y": 204,
+            "x": 423.91999999999996,
+            "y": 465,
             "width": 35,
             "height": 214,
             "head_on": "END"
@@ -212,8 +212,8 @@
         "capacity": 27,
         "head_seats": 1,
         "gui": {
-            "x": 534,
-            "y": 204,
+            "x": 423.91999999999996,
+            "y": 534,
             "width": 35,
             "height": 214,
             "head_on": "END"
@@ -227,8 +227,8 @@
         "capacity": 27,
         "head_seats": 1,
         "gui": {
-            "x": 602,
-            "y": 204,
+            "x": 423.91999999999996,
+            "y": 602,
             "width": 35,
             "height": 214,
             "head_on": "END"
@@ -242,8 +242,8 @@
         "capacity": 27,
         "head_seats": 1,
         "gui": {
-            "x": 670,
-            "y": 204,
+            "x": 423.91999999999996,
+            "y": 670,
             "width": 35,
             "height": 214,
             "head_on": "END"
@@ -257,8 +257,8 @@
         "capacity": 27,
         "head_seats": 1,
         "gui": {
-            "x": 739,
-            "y": 204,
+            "x": 423.91999999999996,
+            "y": 739,
             "width": 35,
             "height": 214,
             "head_on": "END"
@@ -272,8 +272,8 @@
         "capacity": 27,
         "head_seats": 1,
         "gui": {
-            "x": 838,
-            "y": 98,
+            "x": 529.92,
+            "y": 838,
             "width": 35,
             "height": 214,
             "head_on": "END"
@@ -287,8 +287,8 @@
         "capacity": 24,
         "head_seats": 0,
         "gui": {
-            "x": 907,
-            "y": 98,
+            "x": 560.92,
+            "y": 907,
             "width": 35,
             "height": 183
         },
@@ -299,10 +299,10 @@
     {
         "table_id": 21,
         "capacity": 24,
-        "head_seats": 1,
+        "head_seats": 0,
         "gui": {
-            "x": 975,
-            "y": 98,
+            "x": 560.92,
+            "y": 975,
             "width": 35,
             "height": 183
         },
@@ -315,8 +315,8 @@
         "capacity": 24,
         "head_seats": 0,
         "gui": {
-            "x": 375,
-            "y": 490,
+            "x": 168.91999999999996,
+            "y": 375,
             "width": 35,
             "height": 183
         },
@@ -329,8 +329,8 @@
         "capacity": 24,
         "head_seats": 0,
         "gui": {
-            "x": 443,
-            "y": 490,
+            "x": 168.91999999999996,
+            "y": 443,
             "width": 35,
             "height": 183
         },
@@ -343,8 +343,8 @@
         "capacity": 24,
         "head_seats": 0,
         "gui": {
-            "x": 512,
-            "y": 490,
+            "x": 168.91999999999996,
+            "y": 512,
             "width": 35,
             "height": 183
         },
@@ -357,8 +357,8 @@
         "capacity": 24,
         "head_seats": 0,
         "gui": {
-            "x": 581,
-            "y": 490,
+            "x": 168.91999999999996,
+            "y": 581,
             "width": 35,
             "height": 183
         },
@@ -371,8 +371,8 @@
         "capacity": 24,
         "head_seats": 0,
         "gui": {
-            "x": 650,
-            "y": 490,
+            "x": 168.91999999999996,
+            "y": 650,
             "width": 35,
             "height": 183
         },
@@ -385,8 +385,8 @@
         "capacity": 24,
         "head_seats": 0,
         "gui": {
-            "x": 718,
-            "y": 490,
+            "x": 168.91999999999996,
+            "y": 718,
             "width": 35,
             "height": 183
         },
@@ -399,8 +399,8 @@
         "capacity": 16,
         "head_seats": 0,
         "gui": {
-            "x": 787,
-            "y": 551,
+            "x": 168.91999999999996,
+            "y": 787,
             "width": 35,
             "height": 122
         },
