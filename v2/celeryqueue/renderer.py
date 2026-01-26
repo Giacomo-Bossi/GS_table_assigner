@@ -184,6 +184,7 @@ def generaMappa(
         gruppiTavolo = [gruppo for gruppo in gruppi if gruppo["name"] in associazioni[str(table["table_id"])]]
         gruppi_testa = [gruppo for gruppo in gruppiTavolo if gruppo.get('required_head',0)]
         gruppi_normali = [gruppo for gruppo in gruppiTavolo if not gruppo.get('required_head',0)]
+        #gruppi_normali.sort(key=lambda g: g['size']%2==1)
        
         if sum([gr["required_head"] for gr in gruppi_testa]) > table["head_seats"] or len(gruppi_testa) > 1:  #per ora max 1 testa
             raise ValueError("Troppi posti in testa richiesti")
@@ -200,7 +201,12 @@ def generaMappa(
                 spot = seg.pop(0)
                 pdf.rect(x=spot.x,y=spot.y,w=spot.w,h=spot.h,style="F")
 
-        for gruppo in gruppi_normali:
+        while len(gruppi_normali) >0 and len(seg) >0:
+            candidates = [g for g in gruppi_normali if g['size'] <= len(seg)]
+            if not candidates:
+                break
+            gruppo = next((g for g in candidates if (g['size'] % 2) == (len(seg) % 2)), candidates[0])
+            gruppi_normali.remove(gruppo)
             color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
             pdf.set_fill_color(*color)
             for i in range(gruppo["size"]):
