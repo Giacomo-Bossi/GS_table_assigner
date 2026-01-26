@@ -2,6 +2,7 @@ from celery import Celery
 from celery.utils.log import get_task_logger
 import mip
 import time
+import Table_problem_optimizer as Opt
 
 # NOTA: host='redis', non 'localhost'
 celery_app = Celery('tasks', 
@@ -11,15 +12,12 @@ celery_app = Celery('tasks',
 # Celery task-aware logger
 logger = get_task_logger(__name__)
 
-# --- DEFINIZIONE INCUMBENT UPDATER ---
-class CeleryUpdater(mip.IncumbentUpdater):
-    def __init__(self, model, task_instance, T, G, group_sizes):
-        super().__init__(model)
+# --- DEFINIZIONE Estimated Incumbent UPDATER ---
+class CeleryUpdater():
+    def __init__(self, model, task_instance, group_sizes):
         self.model = model
         self.task_instance = task_instance
         self.last_update_time = time.time()
-        self.T = T
-        self.G = G
         self.group_sizes = group_sizes
         self.max = 0
 
@@ -51,78 +49,8 @@ def calculate_table_penalty(num_tables : int)->float:
     return 1/(num_tables+1)
 
 @celery_app.task(bind=True)
-def run_mip_task(self, tables: dict, guests: dict) -> dict:
-
-
-    # Compact index mapping
-    T = list(range(len(tables)))
-    G = list(range(len(guests)))
-
-    tables_cap = [t["capacity"] for t in tables]
-    group_sizes = [g["size"] for g in guests]
-
-    num_tables = len(T)
-    table_penalty = calculate_table_penalty(num_tables)
-
-    model = mip.Model(sense=mip.MAXIMIZE)
-    model.store_search_progress_log = True
-    #model.incumbent_updater = CeleryUpdater(model, self)
-    
-    
-    logger.info("Starting optimization...")
-
-    # Variables
-    assign = [[model.add_var(var_type=mip.BINARY, name=f"assign_g{str(i)}_t{str(j)}")
-               for j in T] for i in G]
-
-    used = [model.add_var(var_type=mip.BINARY) for j in T]
-
-    # Capacity constraints
-    for j in T:
-        model.add_constr(
-            mip.xsum(assign[i][j] * group_sizes[i] for i in G)
-            <= tables_cap[j]
-        )
-
-    # Linking (faster version)
-    for j in T:
-        model.add_constr(
-            mip.xsum(assign[i][j] for i in G) >= used[j]
-        )
-
-    # Each group at most once
-    for i in G:
-        model.add_constr(
-            mip.xsum(assign[i][j] for j in T) <= 1
-        )
-
-    # Objective
-    model.objective = (
-        mip.xsum(assign[i][j] * group_sizes[i] for i in G for j in T)
-        - table_penalty * mip.xsum(used[j] for j in T)
-    )
-    model.cuts_generator = CeleryUpdater(model, self, T, G, group_sizes)
-    model.optimize(relax=False, max_seconds=600)
-
-
-    # Output
-    if not model.num_solutions:
-        return {"error": "no solution"}
-
-    table_assignments = {j: [] for j in T}
-    for i in G:
-        for j in T:
-            if assign[i][j].x >= 0.99:
-                table_assignments[j].append(i)
-
-    return {
-        "pairings": table_assignments,
-        "used_tables": int(sum(used[j].x for j in T)),
-        "total seats": sum(tables_cap),
-        "total guests": sum(group_sizes),
-        "total assignable": sum(
-            group_sizes[i] for i in G
-            if any(assign[i][j].x >= 0.99 for j in T)
-        ),
-        "groups": guests
-    }
+def run_mip_task(self, data:dict):
+    optim = Opt.Table_problem_optimizer(data,minimize_tables=False)  #what about cuts-generator ?
+    optim.model.cuts_generator = CeleryUpdater(optim.model, self, [g["size"] for g in data["groups"]])
+    optim.solve_problem()
+    return optim.get_solution_json()
