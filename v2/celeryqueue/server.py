@@ -12,13 +12,13 @@ list_jobs = []
 def start_job():
     data = request.json
     # Lancia il job in background e ritorna subito l'ID
-    task = run_mip_task.delay(data['tables'], data['groups'])
+    task = run_mip_task.delay(data)
     list_jobs.append(task.id)
     return jsonify({"task_id": task.id}), 202
 
 @app.get("/status/<task_id>")
 def get_status(task_id):
-    task = run_mip_task.AsyncResult(task_id)
+    task = run_mip_task.AsyncResult(task_id) 
     print(f"Task {task_id} state: {task.state}")
     if task.state == 'SUCCESS':
         return jsonify({"status": "COMPLETED", "result": task.result})
@@ -38,10 +38,9 @@ def download_map(task_id):
     task = run_mip_task.AsyncResult(task_id)
     if task.state != 'SUCCESS':
         return jsonify({"error": "Task not completed"}), 400
-    gruppi = task.result.get("groups", [])
-    assegnazioni = task.result.get("pairings", [])
+    
     try:
-        data = generaMappa(assegnazioni, gruppi, title="FESTA D'INVERNO 2026")
+        data = generaMappa(task.result, title="FESTA D'INVERNO 2026")
         return Response(data, mimetype='application/pdf', headers={"Content-Disposition": "attachment;filename=mappa_{}.pdf".format(task_id)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500

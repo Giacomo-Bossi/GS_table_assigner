@@ -35,9 +35,7 @@ def load_renderer():
     
     with open("__resulttorender.json", "r", encoding="utf-8") as f:
         result = json.load(f)
-    gruppi = result.get("groups", [])
-    assegnazioni = result.get("pairings", [])
-    pdf = renderer.generaMappa(assegnazioni, gruppi, title="FESTA D'INVERNO 2026")
+    pdf = renderer.generaMappa(result, title="FESTA D'INVERNO 2026")
     return pdf
 
 
