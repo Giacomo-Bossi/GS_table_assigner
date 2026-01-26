@@ -1,5 +1,5 @@
 
-from math import ceil,floor
+from math import ceil,floor, atan2, degrees
 from pathlib import Path
 from io import BytesIO
 import json
@@ -106,7 +106,7 @@ def generaMappa(
     mb = first_page.mediabox    
     width= float(mb.width)
     height = float(mb.height)
-    print(width,height)
+
     # Create the overlay with the rectangle with matching dimensions
     pdf = FPDF(unit="pt", format=(width, height))
     pdf.add_font("verdana", style="", fname="renderResources/Verdana.ttf", uni=True)
@@ -130,7 +130,26 @@ def generaMappa(
         pdf.text(x=width+150- w_text/2, y=351 , text=text) 
     
     #end header
+
     
+    labls = [] # Elenco di etichette per i tavoli (testo + coordinate + sfondo) vanno stampate alla fine per non essere coperte dai tavoli
+    
+    color = getNewColor()
+    split_colors = {} # pregeneriamo i colori per i gruppi splittati
+    split_tot_size = {}
+    for gruppo in result["groups"]:
+        if "_part" in gruppo["name"]:
+            idgp = gruppo["name"].split("_part")[0]
+            if idgp not in split_colors:
+                split_colors[idgp] = getNewColor(color)
+            if idgp not in split_tot_size:
+                split_tot_size[idgp] = 0
+            split_tot_size[idgp] += gruppo["size"]
+            
+    
+
+    
+
     for table in tavoli_def:
 
         #reference in pdf coordinates 
@@ -144,14 +163,14 @@ def generaMappa(
         height_t = table['gui']['height']
         posti = table["capacity"]
 
-        
+        """
         # sanity check
         pdf.set_fill_color(255, 0, 0)  # Red
         pdf.circle(x=x, y=y, radius=1, style='F')
         
         pdf.set_fill_color(0, 255, 0)  # Green
         pdf.circle(x=x+height_t, y=y+width_t, radius=1, style='F')
-        
+        """
         
         pdf.set_fill_color(200, 200, 200)
         
@@ -187,19 +206,35 @@ def generaMappa(
         #gruppi_normali.sort(key=lambda g: g['size']%2==1)
        
         if sum([gr["required_head"] for gr in gruppi_testa]) > table["head_seats"] or len(gruppi_testa) > 1:  #per ora max 1 testa
+            print("Tavolo", table["table_id"], " - In testa:", gruppi_testa)
             raise ValueError("Troppi posti in testa richiesti")
         
         #if table["head_seats"] >0 :
         #    continue 
 
         seg = table_segmentation(table)
+
+        
+        
+        pdf.set_font("Arial", size=12)
+        pdf.set_text_color(0, 0, 0)
         
         for gruppo_testa in gruppi_testa:
-            color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+            if("_part" in gruppo_testa["name"]):
+                color = split_colors[gruppo_testa["name"].split("_part")[0]]
+            else:
+                color = getNewColor(color)
             pdf.set_fill_color(*color)
             for i in range(gruppo_testa["size"]):
                 spot = seg.pop(0)
                 pdf.rect(x=spot.x,y=spot.y,w=spot.w,h=spot.h,style="F")
+            if("_part" not in gruppo_testa["name"]):
+                labls.append( (f"{gruppo_testa['show_name']}({gruppo_testa['size']})", x + 10 , y + width_t/2, color, 262) )
+            else:
+                idgp = gruppo_testa["name"].split("_part")[0]
+                tot_size = split_tot_size.get(idgp, gruppo_testa["size"])
+                labls.append( (f"{gruppo_testa['show_name']}({gruppo_testa['size']}/{tot_size})", x + 10 , y + width_t/2, color, 262) )
+                
 
         while len(gruppi_normali) >0 and len(seg) >0:
             candidates = [g for g in gruppi_normali if g['size'] <= len(seg)]
@@ -207,20 +242,45 @@ def generaMappa(
                 break
             gruppo = next((g for g in candidates if (g['size'] % 2) == (len(seg) % 2)), candidates[0])
             gruppi_normali.remove(gruppo)
-            color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+            if("_part" in gruppo["name"]):
+                color = split_colors[gruppo["name"].split("_part")[0]]
+            else:
+                color = getNewColor(color)
             pdf.set_fill_color(*color)
+            lowest, highest = 999999, 0
             for i in range(gruppo["size"]):
                 spot = seg.pop(0)
                 pdf.rect(x=spot.x,y=spot.y,w=spot.w,h=spot.h,style="F")
+                if spot.x < lowest:
+                    lowest = spot.x
+                if spot.x+spot.h > highest:
+                    highest = spot.x + spot.h
+            if "_part" not in gruppo["name"]:
+                labls.append( (f"{gruppo['show_name']}({gruppo['size']})", (lowest + highest)/2 , y + width_t/2, color, degrees(atan2(-width_t, lowest-highest))) )
+            else:
+                idgp = gruppo["name"].split("_part")[0]
+                tot_size = split_tot_size.get(idgp, gruppo["size"])
+                labls.append( (f"{gruppo['show_name']}({gruppo['size']}/{tot_size})", (lowest + highest)/2 , y + width_t/2, color, degrees(atan2(-width_t, lowest-highest))) )
                 
 
-        pdf.set_font("Arial", size=12)
-        pdf.set_text_color(0, 0, 0) 
         
-        with pdf.rotation(270, x + height_t/2, y + width_t/2):
-            pdf.text(x=x + height_t/2 - 10, y=y + width_t/2, text=str(table['table_id']))
+        # with pdf.rotation(270, x + height_t/2, y + width_t/2):
+        #     pdf.text(x=x + height_t/2 - 10, y=y + width_t/2, text=str(table['table_id']))
 
         pdf.rect(x=x, y=y, w=height_t, h=width_t, style='D') #table border
+
+    
+    pdf.set_font("Arial", size=8)
+    pdf.set_text_color(0, 0, 0) 
+    for lbl, lx, ly, color, angle in labls:
+        pdf.set_fill_color(*color)
+        text_w = pdf.get_string_width(lbl) + 6
+        text_h = 8+2
+        with pdf.rotation(angle, lx, ly):
+            with pdf.local_context(fill_opacity=0.7):
+                pdf.rect(x=lx - text_w/2, y=ly - text_h/2, w=text_w, h=text_h, style='F')
+            pdf.set_text_color(0, 0, 0)
+            pdf.text(x=lx - text_w/2 + 3, y=ly + 3, text=lbl)
         
     
     ## END DRAW LOGIC
@@ -238,3 +298,51 @@ def generaMappa(
     writer.write(output)
     return output.getvalue()
     
+
+
+
+def getNewColor(old_color:tuple = (0,0,0))->tuple:
+    color = (random.randint(150, 230), random.randint(130, 230), random.randint(120, 230))
+    while deltaE(color, old_color) < 50:
+        color = (random.randint(150, 230), random.randint(130, 230), random.randint(120, 230))
+    return color
+
+def rgbToLab(r: int, g: int, b: int) -> dict:
+    # Convert RGB [0,255] to XYZ (D65)
+    r_lin = r / 255
+    g_lin = g / 255
+    b_lin = b / 255
+
+    r_lin = ((r_lin + 0.055) / 1.055) ** 2.4 if r_lin > 0.04045 else (r_lin / 12.92)
+    g_lin = ((g_lin + 0.055) / 1.055) ** 2.4 if g_lin > 0.04045 else (g_lin / 12.92)
+    b_lin = ((b_lin + 0.055) / 1.055) ** 2.4 if b_lin > 0.04045 else (b_lin / 12.92)
+
+    x = (r_lin * 0.4124564 + g_lin * 0.3575761 + b_lin * 0.1804375) * 100
+    y = (r_lin * 0.2126729 + g_lin * 0.7151522 + b_lin * 0.0721750) * 100
+    z = (r_lin * 0.0193339 + g_lin * 0.1191920 + b_lin * 0.9503041) * 100
+
+    # Convert XYZ to Lab
+    x_ref, y_ref, z_ref = 95.047, 100.0, 108.883
+    x = x / x_ref
+    y = y / y_ref
+    z = z / z_ref
+
+    x = x ** (1 / 3) if x > 0.008856 else (7.787 * x + 16 / 116)
+    y = y ** (1 / 3) if y > 0.008856 else (7.787 * y + 16 / 116)
+    z = z ** (1 / 3) if z > 0.008856 else (7.787 * z + 16 / 116)
+
+    return {
+        "L": 116 * y - 16,
+        "a": 500 * (x - y),
+        "b": 200 * (y - z),
+    }
+
+
+def deltaE(rgb1: tuple, rgb2: tuple) -> float:
+    lab1 = rgbToLab(rgb1[0], rgb1[1], rgb1[2])
+    lab2 = rgbToLab(rgb2[0], rgb2[1], rgb2[2])
+    return (
+        (lab1["L"] - lab2["L"]) ** 2
+        + (lab1["a"] - lab2["a"]) ** 2
+        + (lab1["b"] - lab2["b"]) ** 2
+    ) ** 0.5
