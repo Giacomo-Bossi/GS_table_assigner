@@ -49,7 +49,8 @@ class Table_problem_optimizer():
         self.grps = json_object["groups"]
         self.model = mip.Model(sense=mip.MAXIMIZE)
 
-        self.model.max_mip_gap = 0.02 #2% tolerance to best possible solution
+        #self.model.max_mip_gap = 0.02 #2% tolerance to best possible solution
+        self.model.max_seconds = 30
         self.minimize_tables = minimize_tables
         self.solution_available = False
 
@@ -63,7 +64,7 @@ class Table_problem_optimizer():
         status = self.model.optimize()
 
         if status in [OptimizationStatus.ERROR,OptimizationStatus.INFEASIBLE,OptimizationStatus.INT_INFEASIBLE,OptimizationStatus.UNBOUNDED]:
-            raise ValueError
+            return
         
         elapsed_time = time.time() - start_time
 
@@ -74,7 +75,7 @@ class Table_problem_optimizer():
 
     def add_contraints(self):
 
-        self.assignement_vars = [[self.model.add_var(var_type=mip.BINARY)
+        self.assignement_vars = [[self.model.add_var(var_type=mip.BINARY,name=f"assign_g{str(i.model_id)}_t{str(j.model_id)}")
                                    for j in self.tables] for i in self.reservations]
         
         #table capacity constraints  
@@ -133,39 +134,42 @@ class Table_problem_optimizer():
             print(f"Total guests: {sum(r.size for r in self.reservations)}")
             print(f"Minimize tables: {self.minimize_tables}")
     
-    def write_sol_to_file(self,path="out.json"):
-        if not self.solution_available:
-            return
+    def write_sol_to_file(self,path="out.json")->None:
         sol = self.get_solution_json()
         with open(path,"w") as f:
             json.dump(sol,f,indent=1)
 
+    #def set_cuts_generator(generator):
+    #   self.model.
 
-    def get_solution_json(self):
-        pairings = {str(tab.table_id) : [] for tab in self.tables}
-        tot_seats = sum(table.capacity for table in self.tables)
-        tot_guests = sum(res.size for res in self.reservations)
-        assigned_res = [res for res in self.reservations if any(self.assignement_vars[res.model_id][tab.model_id].x == 1.0 for tab in self.tables)]
-        tot_assigned = sum(res.size for res in assigned_res)
+    def get_solution_json(self)->dict:
+        if not self.solution_available:
+            return {"error": "no solution"}
+        else:
+            pairings = {str(tab.table_id) : [] for tab in self.tables}
+            tot_seats = sum(table.capacity for table in self.tables)
+            tot_guests = sum(res.size for res in self.reservations)
+            assigned_res = [res for res in self.reservations if any(self.assignement_vars[res.model_id][tab.model_id].x == 1.0 for tab in self.tables)]
+            tot_assigned = sum(res.size for res in assigned_res)
 
-        for tab in self.tables:
-            for res in self.reservations:
-                if self.assignement_vars[res.model_id][tab.model_id].x == 1.0:
-                    pairings[str(tab.table_id)].append(str(res.name))
+            for tab in self.tables:
+                for res in self.reservations:
+                    if self.assignement_vars[res.model_id][tab.model_id].x == 1.0:
+                        pairings[str(tab.table_id)].append(str(res.name))
 
-        used_tab = sum(1 for pair in pairings.values() if len(pair) > 0)
+            used_tab = sum(1 for pair in pairings.values() if len(pair) > 0)
 
-        return {
-        "pairings": pairings,
-        "used_tables": used_tab, 
-        "total seats": tot_seats,
-        "total guests": tot_guests,
-        "total assignable": tot_assigned,
-        "groups": self.grps
-        }
+            return {
+            "pairings": pairings,
+            "used_tables": used_tab, 
+            "total seats": tot_seats,
+            "total guests": tot_guests,
+            "total assignable": tot_assigned,
+            "groups": self.grps
+            }
     
 if __name__ == "__main__":
-    with open("C:\\Users\\giaco\\projects\\python\\GS\\GS_table_assigner\\ILP_solver\\Tests\\csvconvert-impossible.json","r") as file:
+    with open("C:\\Users\\giaco\\projects\\python\\tmp\\GS_table_assigner\\ILP_solver\\Examples\\csvconvert-impossible.json","r") as file:
         opt = Table_problem_optimizer(json.load(file))
         opt.solve_problem()
         opt.write_sol_to_file("out.json")
