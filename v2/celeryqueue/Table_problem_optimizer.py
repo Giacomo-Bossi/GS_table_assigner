@@ -50,7 +50,7 @@ class Table_problem_optimizer():
         self.model = mip.Model(sense=mip.MAXIMIZE)
 
         #self.model.max_mip_gap = 0.02 #2% tolerance to best possible solution
-        self.model.max_seconds = 30
+        #self.model.max_seconds = 30
         self.minimize_entropy = minimize_entropy
         self.solution_available = False
 
@@ -61,7 +61,7 @@ class Table_problem_optimizer():
 
         start_time = time.time()
 
-        status = self.model.optimize()
+        status = self.model.optimize(max_seconds_same_incumbent=300) # 5 minuti senza soluzioni migliori
 
         if status in [OptimizationStatus.ERROR,OptimizationStatus.INFEASIBLE,OptimizationStatus.INT_INFEASIBLE,OptimizationStatus.UNBOUNDED]:
             return
@@ -91,6 +91,7 @@ class Table_problem_optimizer():
             )
 
         head_reservations = [res for res in self.reservations if res.require_head == True]
+
 
         #head reservation constraints
         for tab in self.tables:

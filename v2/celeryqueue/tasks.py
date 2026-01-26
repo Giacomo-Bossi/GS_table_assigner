@@ -33,7 +33,7 @@ class CeleryUpdater():
             if(self.max < somma):
                 self.max = somma
                 # Invia aggiornamento di progresso al task Celery
-                self.task_instance.update_state(state='PROGRESS', meta={'current': self.max, 'total': sum(self.group_sizes)})
+                self.task_instance.update_state(state='PROGRESS', meta={'current': self.max + self.task_instance.incumbent_offset, 'total': sum(self.group_sizes) + self.task_instance.incumbent_offset})
                 logger.info(f"##### Progresso: {self.max} boh.")
 
             
@@ -42,7 +42,23 @@ class CeleryUpdater():
     
 @celery_app.task(bind=True)
 def run_mip_task(self, data:dict):
-    optim = Opt.Table_problem_optimizer(data,minimize_entropy=False)  #what about cuts-generator ?
+    self.unhandled_groups = data.get("assignments_groups", [])
+    self.unhandled_assignments = data.get("assignments", {})
+    self.incumbent_offset = sum(group["size"] for group in self.unhandled_groups)
+
+    optim = Opt.Table_problem_optimizer(data,minimize_entropy=False)
     optim.model.cuts_generator = CeleryUpdater(optim.model, self, [g["size"] for g in data["groups"]])
     optim.solve_problem()
-    return optim.get_solution_json()
+    json = optim.get_solution_json()
+    json["groups"].extend(self.unhandled_groups)
+    for table_id, assigned_groups in self.unhandled_assignments.items():
+        if table_id not in json["pairings"]:
+            json["pairings"][table_id] = []
+            json["used_tables"]+= 1
+        json["pairings"][table_id][:0] = assigned_groups
+    json["total assignable"]+= self.incumbent_offset
+    json["total seats"]+= self.incumbent_offset
+    json["total guests"]+= self.incumbent_offset
+
+
+    return json
