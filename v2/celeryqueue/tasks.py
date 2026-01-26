@@ -50,7 +50,7 @@ def calculate_table_penalty(num_tables : int)->float:
 
 @celery_app.task(bind=True)
 def run_mip_task(self, data:dict):
-    optim = Opt.Table_problem_optimizer(data,minimize_tables=False)  #what about cuts-generator ?
+    optim = Opt.Table_problem_optimizer(data,minimize_entropy=False)  #what about cuts-generator ?
     optim.model.cuts_generator = CeleryUpdater(optim.model, self, [g["size"] for g in data["groups"]])
     optim.solve_problem()
     return optim.get_solution_json()

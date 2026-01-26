@@ -3,7 +3,7 @@ import mip
 import time
 from mip import OptimizationStatus
 
-def calculate_table_penalty(num_tables : int)->float:
+def calculate_lambda_coeff(num_tables : int)->float:
         """
         assigns the table penalty in a way that does not affect the number of people that can fit
         """
@@ -32,7 +32,7 @@ class Reservation():
           self.model_id = prog_id
         
 class Table_problem_optimizer():
-    def __init__(self,json_object,minimize_tables=False):
+    def __init__(self,json_object,minimize_entropy=False):
         
         self.tables = []
         id_gen = Prog_id_gen()
@@ -51,12 +51,12 @@ class Table_problem_optimizer():
 
         #self.model.max_mip_gap = 0.02 #2% tolerance to best possible solution
         self.model.max_seconds = 30
-        self.minimize_tables = minimize_tables
+        self.minimize_entropy = minimize_entropy
         self.solution_available = False
 
     def solve_problem(self):
         self.add_contraints()
-        self.add_loss()
+        self.add_utility_function()
         self.model_summary()
 
         start_time = time.time()
@@ -78,6 +78,8 @@ class Table_problem_optimizer():
         self.assignement_vars = [[self.model.add_var(var_type=mip.BINARY,name=f"assign_g{str(i.model_id)}_t{str(j.model_id)}")
                                    for j in self.tables] for i in self.reservations]
         
+        self.full_tables = [self.model.add_var(var_type=mip.BINARY) for i in self.tables]
+
         #table capacity constraints  
         for tab in self.tables:
             self.model.add_constr(
@@ -98,8 +100,12 @@ class Table_problem_optimizer():
             self.model.add_constr(
                 mip.xsum(self.assignement_vars[res.model_id][tab.model_id] for res in head_reservations ) <= tab.head_seats
             )
-            
-        if self.minimize_tables:   
+        #full tables linking
+        for tab in self.tables:
+            self.model.add_constr(self.full_tables[tab.model_id] <=
+                                   1 - (tab.capacity - mip.xsum(self.assignement_vars[res.model_id][tab.model_id] * res.size for res in self.reservations))/tab.capacity)
+
+        if self.minimize_entropy:   
 
             self.used = [self.model.add_var(var_type=mip.BINARY) for j in self.tables]
             for tab in self.tables:
@@ -107,23 +113,23 @@ class Table_problem_optimizer():
                     mip.xsum(self.assignement_vars[res.model_id][tab.model_id] for res in self.reservations) <= len(self.reservations) *self.used[tab.model_id]
                 )
 
-    def add_loss(self):
+    def add_utility_function(self):
 
-        if self.minimize_tables:
-            penalty = calculate_table_penalty(len(self.tables))
+        if self.minimize_entropy:
+            λ = calculate_lambda_coeff(len(self.tables))
             self.model.objective = (
                     mip.xsum(self.assignement_vars[res.model_id][tab.model_id] * res.size 
                             for res in self.reservations 
-                            for tab in self.tables)
-
-                    -  penalty * mip.xsum(self.used[tab.model_id] for tab in self.tables)
-                )
+                            for tab in self.tables) +
+                            λ * mip.xsum(self.full_tables[tab.model_id] for tab in self.tables)
+            )
+                
         else:
             self.model.objective = (
                     mip.xsum(self.assignement_vars[res.model_id][tab.model_id] * res.size 
                             for res in self.reservations 
-                            for tab in self.tables)
-            )
+                            for tab in self.tables) 
+            )  
 
     def model_summary(self):
             print(f"Number of variables: {self.model.num_cols}")
@@ -132,7 +138,7 @@ class Table_problem_optimizer():
             print(f"Number of reservations: {len(self.reservations)}")
             print(f"Total capacity: {sum(t.capacity for t in self.tables)}")
             print(f"Total guests: {sum(r.size for r in self.reservations)}")
-            print(f"Minimize tables: {self.minimize_tables}")
+            print(f"Minimize tables: {self.minimize_entropy}")
     
     def write_sol_to_file(self,path="out.json")->None:
         sol = self.get_solution_json()
