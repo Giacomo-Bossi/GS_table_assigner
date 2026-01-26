@@ -40,14 +40,6 @@ class CeleryUpdater():
             self.last_update_time = time.time()
         return
     
-    
-
-def calculate_table_penalty(num_tables : int)->float:
-    """
-    assign the table penalty in a way that does not affect the number of people that can fit
-    """
-    return 1/(num_tables+1)
-
 @celery_app.task(bind=True)
 def run_mip_task(self, data:dict):
     optim = Opt.Table_problem_optimizer(data,minimize_entropy=False)  #what about cuts-generator ?

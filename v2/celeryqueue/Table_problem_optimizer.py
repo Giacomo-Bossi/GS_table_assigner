@@ -78,13 +78,10 @@ class Table_problem_optimizer():
         self.assignement_vars = [[self.model.add_var(var_type=mip.BINARY,name=f"assign_g{str(i.model_id)}_t{str(j.model_id)}")
                                    for j in self.tables] for i in self.reservations]
         
-        self.full_tables = [self.model.add_var(var_type=mip.BINARY) for i in self.tables]
-
         #table capacity constraints  
         for tab in self.tables:
             self.model.add_constr(
                 mip.xsum(self.assignement_vars[res.model_id][tab.model_id] * res.size for res in self.reservations) <= tab.capacity
-                
             )
 
         # Each group at most one table
@@ -100,18 +97,15 @@ class Table_problem_optimizer():
             self.model.add_constr(
                 mip.xsum(self.assignement_vars[res.model_id][tab.model_id] for res in head_reservations ) <= tab.head_seats
             )
-        #full tables linking
-        for tab in self.tables:
-            self.model.add_constr(self.full_tables[tab.model_id] <=
-                                   1 - (tab.capacity - mip.xsum(self.assignement_vars[res.model_id][tab.model_id] * res.size for res in self.reservations))/tab.capacity)
+        
+        if self.minimize_entropy:
 
-        if self.minimize_entropy:   
-
-            self.used = [self.model.add_var(var_type=mip.BINARY) for j in self.tables]
+            self.full_tables = [self.model.add_var(var_type=mip.BINARY) for i in self.tables]   
+            #full tables linking
             for tab in self.tables:
-                self.model.add_constr(
-                    mip.xsum(self.assignement_vars[res.model_id][tab.model_id] for res in self.reservations) <= len(self.reservations) *self.used[tab.model_id]
-                )
+                self.model.add_constr(self.full_tables[tab.model_id] <=
+                                    1 - (tab.capacity - mip.xsum(self.assignement_vars[res.model_id][tab.model_id] * res.size for res in self.reservations))/tab.capacity)
+                
 
     def add_utility_function(self):
 
