@@ -106,6 +106,7 @@ async function jobCall(gruppiData, tavoliData) {
             gruppiGrossi = gruppiData.filter(g => g.size > biggestTableCapacity);
         }
         console.log("New groups after splitting:", assegnamentiManuali);
+        gruppiData = gruppiData.filter(g => g.size > 0); // remove splitted groups that are now size 0
         changeProgressBar(PRESOLVER_PERC_WEIGHT);
     } catch (e) {
         alert("Error during presolver: " + e.message);
@@ -114,7 +115,7 @@ async function jobCall(gruppiData, tavoliData) {
     }
     // external solver call
     try {
-        const response = await fetch('solver/start_job', { 
+        const response = await fetch('http://localhost:5000/start_job', { 
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
