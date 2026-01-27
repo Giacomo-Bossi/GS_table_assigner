@@ -115,7 +115,7 @@ async function jobCall(gruppiData, tavoliData) {
     }
     // external solver call
     try {
-        const response = await fetch('http://localhost:5000/start_job', { 
+        const response = await fetch('solver/start_job', { 
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
