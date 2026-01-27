@@ -8,7 +8,7 @@ async function createJob(file) {
         console.log("Generated gruppi data:", gruppiData);
 
         // load table configuration
-        const tavoliResponse = await fetch('../tavoli.json');
+        const tavoliResponse = await fetch('tavoli.json');
         const tavoliData = await tavoliResponse.json();
         console.log("Loaded tavoli data:", tavoliData);
 
