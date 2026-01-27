@@ -4,7 +4,7 @@ import mip
 import time
 import Table_problem_optimizer as Opt
 
-# NOTA: host='redis', non 'localhost'
+# NOTA: host='redis' punta al docker "redis"
 celery_app = Celery('tasks', 
                     broker='redis://redis:6379/0', 
                     backend='redis://redis:6379/0')

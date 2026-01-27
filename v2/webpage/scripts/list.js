@@ -1,5 +1,5 @@
 $(document).ready(function() {
-    fetch('http://127.0.0.1:5000/jobs')
+    fetch('solver/jobs')
         .then(response => response.json())
         .then(data => {
             const jobsList = $('#tableBody');
@@ -12,7 +12,7 @@ $(document).ready(function() {
                 </tr>`);
                 
                 const updateJobStatus = () => {
-                    fetch(`http://127.0.0.1:5000/status/${jobId}`)
+                    fetch(`solver/status/${jobId}`)
                         .then(response => response.json())
                         .then(statusData => {
                             

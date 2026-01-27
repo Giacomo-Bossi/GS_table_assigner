@@ -9,7 +9,7 @@ window.onload = function() {
 
 
 function fetchJobStatus() {
-    let status = fetch(`http://localhost:5000/status/${job_id}`);
+    let status = fetch(`solver/status/${job_id}`);
     status.then(response => response.json())
         .then(data => {
             console.log("Job status:", data);
@@ -26,13 +26,13 @@ function fetchJobStatus() {
                 let dlPlaceholdersBtn = document.createElement("button");
                 dlPlaceholdersBtn.innerHTML = `<i class="ri-file-paper-2-fill"></i>`;
                 dlPlaceholdersBtn.onclick = function() {
-                    window.location.href = `http://localhost:5000/download/${job_id}/placeholders`;
+                    window.location.href = `solver/download/${job_id}/placeholders`;
                 };
 
                 let dlMapBtn = document.createElement("button");
                 dlMapBtn.innerHTML = `<i class="ri-treasure-map-line"></i>`;
                 dlMapBtn.onclick = function() {
-                    window.location.href = `http://localhost:5000/download/${job_id}/map`;
+                    window.location.href = `solver/download/${job_id}/map`;
                 };
 
                 let buttonsContainer = document.createElement("div");
