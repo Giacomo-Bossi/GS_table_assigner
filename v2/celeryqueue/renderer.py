@@ -11,7 +11,7 @@ from pypdf import PdfWriter, PdfReader
 
 IMAGE_PATH = Path("renderResources/logopng.png")
 TEMPLATE_PATH = Path("renderResources/segnaposto_template.json")
-PLANIMETRIA_PATH = Path("renderResources/planimetria_FDI2026.pdf")
+PLANIMETRIA_PATH = Path("renderResources/Planimetria_FDI2026.pdf")
 TAVOLI_JSON_PATH = Path("renderResources/tavoli_rotated_2.json")
 
 
