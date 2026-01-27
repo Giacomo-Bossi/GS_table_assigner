@@ -51,6 +51,11 @@ function fetchJobStatus() {
             } else if (data.status === "PROGRESS") {
                 let progress = data.meta;
                 document.getElementById("jobProgressText").textContent = `Assegnati: ${progress.current} / ${progress.total}`;
+            } else if (data.status === "FAILURE") {
+                clearInterval(updater);
+                document.getElementById("jobStatusText").textContent = "Errore durante l'elaborazione.";
+                document.querySelector(".loader-job").remove();
+                document.querySelectorAll(".lo_sp").forEach(el => el.remove());
             }
 
 
