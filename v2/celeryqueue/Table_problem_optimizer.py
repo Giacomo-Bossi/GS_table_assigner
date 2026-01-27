@@ -64,7 +64,7 @@ class Table_problem_optimizer():
 
         start_time = time.time()
 
-        status = self.model.optimize(max_seconds_same_incumbent=300) # 5 minuti senza soluzioni migliori
+        status = self.model.optimize(max_seconds_same_incumbent=60) # secondi senza soluzioni migliori
 
         if status in [OptimizationStatus.ERROR,OptimizationStatus.INFEASIBLE,OptimizationStatus.INT_INFEASIBLE,OptimizationStatus.UNBOUNDED]:
             return
