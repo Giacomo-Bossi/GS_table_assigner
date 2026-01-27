@@ -11,7 +11,7 @@ from pypdf import PdfWriter, PdfReader
 
 IMAGE_PATH = Path("renderResources/logopng.png")
 TEMPLATE_PATH = Path("renderResources/segnaposto_template.json")
-PLANIMETRIA_PATH = Path("renderResources/planimetria_FDI.pdf")
+PLANIMETRIA_PATH = Path("renderResources/planimetria_FDI2026.pdf")
 TAVOLI_JSON_PATH = Path("renderResources/tavoli_rotated_2.json")
 
 
@@ -103,7 +103,7 @@ def generaMappa(
     # Read the planimetry first to get dimensions
     reader = PdfReader(PLANIMETRIA_PATH)
     first_page = reader.pages[0]
-    mb = first_page.mediabox    
+    mb = first_page.mediabox
     width= float(mb.width)
     height = float(mb.height)
 
@@ -115,23 +115,22 @@ def generaMappa(
 ## START DRAW LOGIC
     
     
-    #change header title
-    pdf.set_fill_color(255, 255, 255)
-    pdf.rect(x=width-75, y=270, w=40, h=607, style='F') 
-    with pdf.rotation(270, width-35, 500):
-        pdf.set_x(x=width-75)
-        pdf.set_y(y=500)
+    # change header title
+    # pdf.set_fill_color(255, 255, 255)
+    # pdf.rect(x=width-75, y=270, w=40, h=607, style='F') 
+    # with pdf.rotation(270, width-35, 500):
+    #     pdf.set_x(x=width-75)
+    #     pdf.set_y(y=500)
 
-    pdf.set_font("verdana", size=50)
-    pdf.set_text_color(0, 0, 255)
-    text = title
-    w_text = pdf.get_string_width(text)
-    with pdf.rotation(270, width-72, 350):
-        pdf.text(x=width+150- w_text/2, y=351 , text=text) 
+    # pdf.set_font("verdana", size=50)
+    # pdf.set_text_color(0, 0, 255)
+    # text = title
+    # w_text = pdf.get_string_width(text)
+    # with pdf.rotation(270, width-72, 350):
+    #     pdf.text(x=width+150- w_text/2, y=351 , text=text) 
     
     #end header
 
-    
     labls = [] # Elenco di etichette per i tavoli (testo + coordinate + sfondo) vanno stampate alla fine per non essere coperte dai tavoli
     
     color = getNewColor()
@@ -177,7 +176,7 @@ def generaMappa(
         SEAT_W = 12
         SEAT_H = 3
         EDGE_GAP = 1.2
-        SEAT_STRIDE = 15.23  #distanza tra i centri dei 
+        SEAT_STRIDE = 15.28  #distanza tra i centri dei 
         
         if table["head_seats"] == 0:  
             for vp in range(ceil(posti/2)):
