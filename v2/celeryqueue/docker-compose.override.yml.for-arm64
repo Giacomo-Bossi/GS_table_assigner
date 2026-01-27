@@ -1,0 +1,10 @@
+# Architettura ARM64 necessita binari specifici CBC
+services:
+  worker:  
+    environment:
+      - PMIP_CBC_LIBRARY=/libcbc/libCbc.so
+      - LD_LIBRARY_PATH=/libcbc:/usr/local/lib:/usr/lib:/lib
+    
+    volumes:
+      # Monta la cartella della libreria CBC ARM64
+      - /home/opc/COIN-OR/dist/lib:/libcbc
