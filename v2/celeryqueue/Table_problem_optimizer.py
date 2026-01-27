@@ -37,14 +37,17 @@ class Table_problem_optimizer():
         self.tables = []
         id_gen = Prog_id_gen()
 
+        
         for table in json_object["tables"]:
-            self.tables.append(Table(table,id_gen.get_next()))
+            if table["capacity"] > 0:
+                self.tables.append(Table(table,id_gen.get_next()))
 
         self.reservations = []
         id_gen = Prog_id_gen()
 
         for res in json_object["groups"]:
-            self.reservations.append(Reservation(res,id_gen.get_next()))
+            if res["size"] > 0:
+                self.reservations.append(Reservation(res,id_gen.get_next()))
 
         self.grps = json_object["groups"]
         self.model = mip.Model(sense=mip.MAXIMIZE)
