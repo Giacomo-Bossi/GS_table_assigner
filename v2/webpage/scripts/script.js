@@ -36,7 +36,7 @@ dropArea.addEventListener("dragenter", (event) => {
             console.log("piu di un file");
             dropArea.classList.add("error");
             animateText("Scegli un file solo!");
-        } else if (event.dataTransfer.items[0].kind === "file" && event.dataTransfer.items[0].type === "text/csv") {
+        } else if (event.dataTransfer.items[0].kind === "file" && (event.dataTransfer.items[0].type === "text/csv" || event.dataTransfer.items[0].type === "application/vnd.ms-excel")) {
             dropArea.classList.add("active");
             dropArea.classList.remove("error");
             animateText("Rilascia per caricare il file");
@@ -72,7 +72,7 @@ dropArea.addEventListener("drop", (event) => {
         dropArea.classList.remove("active");
         return;
     }
-    if (event.dataTransfer.files[0].type !== "text/csv") {
+    if (event.dataTransfer.files[0].type !== "text/csv" && event.dataTransfer.files[0].name.split('.').pop().toLowerCase() !== 'csv') {
         dropArea.classList.add("error");
         animateText("Serve un file CSV!");
         dropArea.classList.remove("active");
@@ -127,7 +127,7 @@ function upload_file(e) {
 function file_browse() {
     document.getElementById('file').onchange = function () {
         fileobj = document.getElementById('file').files[0];
-        if (fileobj.type !== "text/csv") {
+        if (fileobj.type !== "text/csv" && fileobj.name.split('.').pop().toLowerCase() !== 'csv') {
             dropArea.classList.add("error");
             animateText("Serve un file CSV!");
             return;
