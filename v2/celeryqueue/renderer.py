@@ -140,7 +140,8 @@ def generaMappa(
         if "_part" in gruppo["name"]:
             idgp = gruppo["name"].split("_part")[0]
             if idgp not in split_colors:
-                split_colors[idgp] = getNewColor(color)
+                color = getNewColor(color)
+                split_colors[idgp] = color
             if idgp not in split_tot_size:
                 split_tot_size[idgp] = 0
             split_tot_size[idgp] += gruppo["size"]
@@ -393,7 +394,7 @@ def generaMappa(
 
 
 
-def getNewColor(old_color:tuple = (0,0,0))->tuple:
+def getNewColor(old_color:tuple = (random.randint(150, 230), random.randint(130, 230), random.randint(120, 230)))->tuple:
     color = (random.randint(150, 230), random.randint(130, 230), random.randint(120, 230))
     while deltaE(color, old_color) < 50:
         color = (random.randint(150, 230), random.randint(130, 230), random.randint(120, 230))
