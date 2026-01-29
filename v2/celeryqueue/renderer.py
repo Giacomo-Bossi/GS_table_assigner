@@ -210,6 +210,14 @@ def generaMappa(
         
         #if table["head_seats"] >0 :
         #    continue 
+        pdf.set_font("Arial", size=12)
+        pdf.set_text_color(0, 0, 0)
+        pdf.set_fill_color(255, 255, 255)
+        labLen = pdf.get_string_width(str(table['table_id']))
+        with pdf.rotation(270, x + height_t + 5, y + width_t - labLen ):
+         #pdf.rect(x=x + height_t + 5, y=y + width_t - labLen +2, w=labLen, h=-14, style='F')
+         pdf.circle(x=x + height_t + 5 + labLen/2, y=y + width_t - labLen -5, radius=labLen/2 +4, style='F')
+         pdf.text(x=x + height_t + 5, y=y + width_t - labLen, text=str(table['table_id']))
 
         seg = table_segmentation(table)
 
@@ -292,6 +300,91 @@ def generaMappa(
     for page in reader.pages:
         page.merge_page(overlay_page)
         writer.add_page(page)
+
+    # START ELENCO DRAWING
+    elenco_pdf = FPDF(unit="pt", format="A4", orientation="portrait")
+    elenco_pdf.add_font("verdana", style="", fname="renderResources/Verdana.ttf", uni=True)
+    elenco_pdf.add_page()
+    elenco_pdf.set_font("verdana", size=24)
+    elenco_pdf.set_text_color(0, 0, 0)
+    title_text = "ELENCO ALFABETICO"
+    page_width = elenco_pdf.w
+    text_w = elenco_pdf.get_string_width(title_text)
+    elenco_pdf.text(x=(page_width - text_w) / 2, y=50, text=title_text)
+
+    # Draw table: 2 page columns, each with 2 columns (large + small), 50 rows
+    left_margin = 40
+    top_margin = 80
+    gutter = 20
+    usable_width = page_width - (left_margin * 2)
+    block_width = (usable_width - gutter) / 2
+    small_col_w = block_width * 0.1
+    large_col_w = block_width - small_col_w
+    row_h = 14
+    rows = 50
+
+    elenco_pdf.set_draw_color(0, 0, 0)
+
+    # Build alphabetical list: reservation name -> table number
+    groups_by_name = {g["name"]: g for g in result.get("groups", [])}
+    entries = []
+    for table_id, group_names in result.get("pairings", {}).items():
+        for gname in group_names:
+            group = groups_by_name.get(gname)
+            if not group:
+                continue
+            if "_part" not in group["name"]:
+                display_name = group.get("show_name", gname)
+                display_name = f"{display_name} ({group.get('size', '')})".rstrip()
+                entries.append((display_name, str(table_id)))
+            else:
+                idgp = group["name"].split("_part")[0]
+                tot_size = sum([gr["size"] for gr in result.get("groups", []) if gr["name"].startswith(idgp+"_part")])
+                display_name = group.get("show_name", gname)
+                display_name = f"{display_name} ({group.get('size', '')}/{tot_size})".rstrip()
+                entries.append((display_name, str(table_id)))
+    entries.sort(key=lambda x: x[0].lower())
+
+    elenco_pdf.set_font("verdana", size=9)
+    for col_idx in range(2):
+        x0 = left_margin + col_idx * (block_width + gutter)
+
+        # Header
+        header_y = top_margin - 6
+        elenco_pdf.text(x=x0 + 2, y=header_y, text="Nome")
+        tav_w = elenco_pdf.get_string_width("Tav.")
+        tav_x = x0 + large_col_w + (small_col_w - tav_w) / 2
+        elenco_pdf.text(x=tav_x, y=header_y, text="Tav.")
+
+        # Outer border and vertical divider (solid)
+        elenco_pdf.rect(x=x0, y=top_margin, w=block_width, h=rows * row_h, style='D')
+        elenco_pdf.line(x0 + large_col_w, top_margin, x0 + large_col_w, top_margin + rows * row_h)
+
+        # Horizontal lines: solid
+        for r in range(rows + 1):
+            y_line = top_margin + r * row_h
+            elenco_pdf.line(x0, y_line, x0 + block_width, y_line)
+
+        # Row text
+        for r in range(rows):
+            y = top_margin + r * row_h
+            entry_idx = col_idx * rows + r
+            if entry_idx < len(entries):
+                name, table_no = entries[entry_idx]
+                text_y = y + row_h - 4
+                # Reservation name
+                elenco_pdf.text(x=x0 + 2, y=text_y, text=name)
+                # Table number (right column, centered)
+                tn_w = elenco_pdf.get_string_width(table_no)
+                tn_x = x0 + large_col_w + (small_col_w - tn_w) / 2
+                elenco_pdf.text(x=tn_x, y=text_y, text=table_no)
+    
+    
+    # END ELENCO DRAWING
+
+    title_bytes = elenco_pdf.output()
+    title_reader = PdfReader(BytesIO(title_bytes))
+    writer.add_page(title_reader.pages[0])
 
     output = BytesIO()
     writer.write(output)
