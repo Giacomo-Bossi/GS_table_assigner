@@ -2,17 +2,19 @@
 from math import ceil,floor, atan2, degrees
 from pathlib import Path
 from io import BytesIO
+from contextlib import contextmanager
 import json
 import random
 
 from fpdf import Template, FPDF
 from pypdf import PdfWriter, PdfReader
+from requests import head
 
 
 IMAGE_PATH = Path("renderResources/logopng.png")
 TEMPLATE_PATH = Path("renderResources/segnaposto_template.json")
-PLANIMETRIA_PATH = Path("renderResources/Planimetria_FDI2026.pdf")
-TAVOLI_JSON_PATH = Path("renderResources/tavoli_rotated_2.json")
+PLANIMETRIA_PATH = Path("renderResources/PLANIMETRIA FDS.pdf")
+TAVOLI_JSON_PATH = Path("renderResources/tavoli_FDS.json")
 
 
 class Table_spot():
@@ -22,7 +24,19 @@ class Table_spot():
         self.h = h
         self.w = w
 
-def table_segmentation(table:dict)->list:
+@contextmanager
+def nullcontext():
+    """A context manager that does nothing."""
+    yield
+
+def table_segmentation(table:dict, head_lateral_seats_offset:int=9, head_other_seats_offset:int=32, seats_stride:int=18 )->list:
+    """Return list of Table_spot for the given table.
+
+    Optional drawing parameters (defaults match `tavoli` draw_params):
+    - head_lateral_seats_offset: offset for lateral head seats
+    - head_other_seats_offset: offset for other head seats
+    - seats_stride: stride between seat centers
+    """
     posti  = table["capacity"]
     h = table['gui']['height']
     w = table['gui']['width']
@@ -31,18 +45,17 @@ def table_segmentation(table:dict)->list:
     segmenti = []
 
     if table["head_seats"] > 0:  #at most one head, at the bottom
-        
-        segmenti.append(Table_spot(x,y,w,8))
-        segmenti.append(Table_spot(x+8,y,w/2,24))
-        segmenti.append(Table_spot(x+8,y+w/2,w/2,24))
+        segmenti.append(Table_spot(x, y, w, head_lateral_seats_offset)) #head seat
+        segmenti.append(Table_spot(x + head_lateral_seats_offset, y, w/2,  head_other_seats_offset - head_lateral_seats_offset)) #left head lateral seats
+        segmenti.append(Table_spot(x + head_lateral_seats_offset, y + w/2, w/2, head_other_seats_offset - head_lateral_seats_offset)) #rigth head lateral seats
 
-        posti -=3
-        h = h-32
-        x=x+32
+        posti -= 3
+        h = h - head_other_seats_offset
+        x = x + head_other_seats_offset
 
     if posti >0:
         square_h = h / ceil(posti/2)
-        square_w = w /2
+        square_w = w / 2
         
         for i in range(posti):
             segmenti.append(Table_spot(x+square_h*floor(i/2),
@@ -98,8 +111,12 @@ def generaMappa(
     
     # Read table definitions
     with open(TAVOLI_JSON_PATH, 'r', encoding='utf-8') as f:
-        tavoli_def = json.load(f)
+        table_definitions = json.load(f)
 
+    head_lateral_seats_offset = table_definitions.get("draw_params", {}).get("head_lateral_seats_offset", 9)
+    head_other_seats_offset = table_definitions.get("draw_params", {}).get("head_other_seats_offset", 32)
+    seats_stride = table_definitions.get("draw_params", {}).get("seats_stride", 18)
+    tavoli_def = table_definitions.get("tables", [])
     # Read the planimetry first to get dimensions
     reader = PdfReader(PLANIMETRIA_PATH)
     first_page = reader.pages[0]
@@ -108,7 +125,9 @@ def generaMappa(
     height = float(mb.height)
 
     # Create the overlay with the rectangle with matching dimensions
-    pdf = FPDF(unit="pt", format=(width, height))
+    
+    squared = max(width, height) # quadrato serve perchè altrimenti ruotando la pagina (nel merge) gli elementi possono uscire fuori dalla pagina ed esere tagliati
+    pdf = FPDF(unit="pt", format=(squared, squared)) 
     pdf.add_font("verdana", style="", fname="renderResources/Verdana.ttf", uni=True)
     pdf.add_page()
     
@@ -163,146 +182,159 @@ def generaMappa(
         height_t = table['gui']['height']
         posti = table["capacity"]
 
-        """
-        # sanity check
-        pdf.set_fill_color(255, 0, 0)  # Red
-        pdf.circle(x=x, y=y, radius=1, style='F')
         
-        pdf.set_fill_color(0, 255, 0)  # Green
-        pdf.circle(x=x+height_t, y=y+width_t, radius=1, style='F')
-        """
+        horizontal = table.get("horizontal", False)
+        ##print(f"Drawing table {table['table_id']} at ({x},{y}) w={width_t} h={height_t} posti={posti} head={table['head_seats']} horizontal={horizontal}")
+
+        # Determine rotation context
+        label_ctx = pdf.rotation(90, x, y) if horizontal else nullcontext()
         
-        pdf.set_fill_color(200, 200, 200)
-        
-        SEAT_W = 12
-        SEAT_H = 3
-        EDGE_GAP = 1.2
-        SEAT_STRIDE = 15.28  #distanza tra i centri dei 
-        
-        if table["head_seats"] == 0:  
-            for vp in range(ceil(posti/2)):
-                # Left side
-                pdf.rect(x=x+EDGE_GAP+SEAT_STRIDE*vp, y=y-SEAT_H, w=SEAT_W, h=SEAT_H, style='FD')
-                # Right side
-                if(table["capacity"] % 2 == 0 or vp >  0):
-                    pdf.rect(x=x+EDGE_GAP+SEAT_STRIDE*vp, y=y+width_t, w=SEAT_W, h=SEAT_H, style='FD')
-        else:
-            pdf.rect(x=x-SEAT_H, y=y+((width_t-SEAT_W)/2), w=SEAT_H, h=SEAT_W, style='FD') #horizontal seat
-            pdf.rect(x=x+SEAT_W-SEAT_H, y=y-SEAT_H, w=SEAT_W, h=SEAT_H, style='FD')
-            pdf.rect(x=x+SEAT_W-SEAT_H, y=y+width_t, w=SEAT_W, h=SEAT_H, style='FD')
+        with label_ctx:
+            """
+            # sanity check
+            pdf.set_fill_color(255, 0, 0)  # Red
+            pdf.circle(x=x, y=y, radius=1, style='F')
             
-            for vp in range(ceil((posti-3)/2)):
-                # Left side
-                pdf.rect(x=x+32+SEAT_STRIDE*vp, y=y-SEAT_H, w=SEAT_W, h=SEAT_H, style='FD')
-                # Right side
-                if((posti-3) % 2 == 0 or vp >  0):
-                    pdf.rect(x=x+32+SEAT_STRIDE*vp, y=y+width_t, w=SEAT_W, h=SEAT_H, style='FD')
-        
-        gruppi = result["groups"]
-        associazioni = result["pairings"]
-        gruppiTavolo = [gruppo for gruppo in gruppi if gruppo["name"] in associazioni[str(table["table_id"])]]
-        gruppi_testa = [gruppo for gruppo in gruppiTavolo if gruppo.get('required_head',0)]
-        gruppi_normali = [gruppo for gruppo in gruppiTavolo if not gruppo.get('required_head',0)]
-        #gruppi_normali.sort(key=lambda g: g['size']%2==1)
-       
-        if sum([gr["required_head"] for gr in gruppi_testa]) > table["head_seats"] or len(gruppi_testa) > 1:  #per ora max 1 testa
-            print("Tavolo", table["table_id"], " - In testa:", gruppi_testa)
-            raise ValueError("Troppi posti in testa richiesti")
-        
-        #if table["head_seats"] >0 :
-        #    continue 
-        pdf.set_font("Arial", size=12)
-        pdf.set_text_color(0, 0, 0)
-        pdf.set_fill_color(255, 255, 255)
-        labLen = pdf.get_string_width(str(table['table_id']))
-        with pdf.rotation(270, x + height_t + 5, y + width_t - labLen ):
-         #pdf.rect(x=x + height_t + 5, y=y + width_t - labLen +2, w=labLen, h=-14, style='F')
-         pdf.circle(x=x + height_t + 5 + labLen/2, y=y + width_t - labLen -5, radius=labLen/2 +4, style='F')
-         pdf.text(x=x + height_t + 5, y=y + width_t - labLen, text=str(table['table_id']))
-
-        seg = table_segmentation(table)
-
-        
-        
-        pdf.set_font("Arial", size=12)
-        pdf.set_text_color(0, 0, 0)
-        
-        for gruppo_testa in gruppi_testa:
-            if("_part" in gruppo_testa["name"]):
-                color = split_colors[gruppo_testa["name"].split("_part")[0]]
+            pdf.set_fill_color(0, 255, 0)  # Green
+            pdf.circle(x=x+height_t, y=y+width_t, radius=1, style='F')
+            """
+            
+            pdf.set_fill_color(200, 200, 200)
+            
+            SEAT_W = 12
+            SEAT_H = 3
+            HEAD_LATERAL_SEATS_OFFSET = head_lateral_seats_offset
+            HEAD_OTHER_SEATS_OFFSET = head_other_seats_offset
+            EDGE_GAP = 1.2
+            SEAT_STRIDE = seats_stride  #distanza tra i centri dei posti
+            
+            if table["head_seats"] == 0:  
+                for vp in range(ceil(posti/2)):
+                    # Left side
+                    pdf.rect(x=x+EDGE_GAP+SEAT_STRIDE*vp, y=y-SEAT_H, w=SEAT_W, h=SEAT_H, style='FD')
+                    # Right side
+                    if(table["capacity"] % 2 == 0 or vp >  0):
+                        pdf.rect(x=x+EDGE_GAP+SEAT_STRIDE*vp, y=y+width_t, w=SEAT_W, h=SEAT_H, style='FD')
             else:
-                color = getNewColor(color)
-            pdf.set_fill_color(*color)
-            for i in range(gruppo_testa["size"]):
-                spot = seg.pop(0)
-                pdf.rect(x=spot.x,y=spot.y,w=spot.w,h=spot.h,style="F")
-            if("_part" not in gruppo_testa["name"]):
-                labls.append( (f"{gruppo_testa['show_name']}({gruppo_testa['size']})", x + 10 , y + width_t/2, color, 262) )
-            else:
-                idgp = gruppo_testa["name"].split("_part")[0]
-                tot_size = split_tot_size.get(idgp, gruppo_testa["size"])
-                labls.append( (f"{gruppo_testa['show_name']}({gruppo_testa['size']}/{tot_size})", x + 10 , y + width_t/2, color, 262) )
+                pdf.rect(x=x-SEAT_H, y=y+((width_t-SEAT_W)/2), w=SEAT_H, h=SEAT_W, style='FD') #horizontal seat
+                pdf.rect(x=x+HEAD_LATERAL_SEATS_OFFSET, y=y-SEAT_H, w=SEAT_W, h=SEAT_H, style='FD')
+                pdf.rect(x=x+HEAD_LATERAL_SEATS_OFFSET, y=y+width_t, w=SEAT_W, h=SEAT_H, style='FD')
                 
+                for vp in range(ceil((posti-3)/2)):
+                    # Left side
+                    pdf.rect(x=x+HEAD_OTHER_SEATS_OFFSET+SEAT_STRIDE*vp, y=y-SEAT_H, w=SEAT_W, h=SEAT_H, style='FD')
+                    # Right side
+                    if((posti-3) % 2 == 0 or vp >  0):
+                        pdf.rect(x=x+HEAD_OTHER_SEATS_OFFSET+SEAT_STRIDE*vp, y=y+width_t, w=SEAT_W, h=SEAT_H, style='FD')
+            
+            pdf.rect(x=x, y=y, w=height_t, h=width_t, style='D') #table border
+            
+            # Draw table ID label inside rotation context (position rotates with table, text stays upright)
+            pdf.set_font("Arial", size=12)
+            pdf.set_text_color(0, 0, 0)
+            pdf.set_fill_color(255, 255, 255)
+            labLen = pdf.get_string_width(str(table['table_id']))
+            with pdf.rotation(270, x + height_t + 5, y + width_t - labLen):
+                pdf.circle(x=x + height_t + 5 + labLen/2, y=y + width_t - labLen -5, radius=labLen/2 - 1 +4, style='F')
+                pdf.text(x=x + height_t + 5, y=y + width_t - labLen, text=str(table['table_id']))
 
-        while len(gruppi_normali) >0 and len(seg) >0:
-            candidates = [g for g in gruppi_normali if g['size'] <= len(seg)]
-            if not candidates:
-                break
-            gruppo = next((g for g in candidates if (g['size'] % 2) == (len(seg) % 2)), candidates[0])
-            gruppi_normali.remove(gruppo)
-            if("_part" in gruppo["name"]):
-                color = split_colors[gruppo["name"].split("_part")[0]]
-            else:
-                color = getNewColor(color)
-            pdf.set_fill_color(*color)
-            lowest, highest = 999999, 0
-            for i in range(gruppo["size"]):
-                spot = seg.pop(0)
-                pdf.rect(x=spot.x,y=spot.y,w=spot.w,h=spot.h,style="F")
-                if spot.x < lowest:
-                    lowest = spot.x
-                if spot.x+spot.h > highest:
-                    highest = spot.x + spot.h
-            if "_part" not in gruppo["name"]:
-                labls.append( (f"{gruppo['show_name']}({gruppo['size']})", (lowest + highest)/2 , y + width_t/2, color, degrees(atan2(-width_t, lowest-highest))) )
-            else:
-                idgp = gruppo["name"].split("_part")[0]
-                tot_size = split_tot_size.get(idgp, gruppo["size"])
-                labls.append( (f"{gruppo['show_name']}({gruppo['size']}/{tot_size})", (lowest + highest)/2 , y + width_t/2, color, degrees(atan2(-width_t, lowest-highest))) )
-                
 
+            gruppi = result["groups"]
+            associazioni = result["pairings"]
+            gruppiTavolo = [gruppo for gruppo in gruppi if gruppo["name"] in associazioni[str(table["table_id"])]]
+            gruppi_testa = [gruppo for gruppo in gruppiTavolo if gruppo.get('required_head',0)]
+            gruppi_normali = [gruppo for gruppo in gruppiTavolo if not gruppo.get('required_head',0)]
+            #gruppi_normali.sort(key=lambda g: g['size']%2==1)
         
-        # with pdf.rotation(270, x + height_t/2, y + width_t/2):
-        #     pdf.text(x=x + height_t/2 - 10, y=y + width_t/2, text=str(table['table_id']))
+            if sum([gr["required_head"] for gr in gruppi_testa]) > table["head_seats"] or len(gruppi_testa) > 1:  #per ora max 1 testa
+                print("Tavolo", table["table_id"], " - In testa:", gruppi_testa)
+                raise ValueError("Troppi posti in testa richiesti")
+            
+            #if table["head_seats"] >0 :
+            #    continue 
 
-        pdf.rect(x=x, y=y, w=height_t, h=width_t, style='D') #table border
+            seg = table_segmentation(table, head_lateral_seats_offset, head_other_seats_offset, seats_stride)
+
+            
+            
+            pdf.set_font("Arial", size=12)
+            pdf.set_text_color(0, 0, 0)
+            
+            for gruppo_testa in gruppi_testa:
+                if("_part" in gruppo_testa["name"]):
+                    color = split_colors[gruppo_testa["name"].split("_part")[0]]
+                else:
+                    color = getNewColor(color)
+                pdf.set_fill_color(*color)
+                for i in range(gruppo_testa["size"]):
+                    spot = seg.pop(0)
+                    pdf.rect(x=spot.x,y=spot.y,w=spot.w,h=spot.h,style="F")
+                if("_part" not in gruppo_testa["name"]):
+                    labls.append( (f"{gruppo_testa['show_name']}({gruppo_testa['size']})", x + 10 , y + width_t/2, color, 262, horizontal, x, y) )
+                else:
+                    idgp = gruppo_testa["name"].split("_part")[0]
+                    tot_size = split_tot_size.get(idgp, gruppo_testa["size"])
+                    labls.append( (f"{gruppo_testa['show_name']}({gruppo_testa['size']}/{tot_size})", x + 10 , y + width_t/2, color, 262, horizontal, x, y) )
+                    
+
+            while len(gruppi_normali) >0 and len(seg) >0:
+                candidates = [g for g in gruppi_normali if g['size'] <= len(seg)]
+                if not candidates:
+                    break
+                gruppo = next((g for g in candidates if (g['size'] % 2) == (len(seg) % 2)), candidates[0])
+                gruppi_normali.remove(gruppo)
+                if("_part" in gruppo["name"]):
+                    color = split_colors[gruppo["name"].split("_part")[0]]
+                else:
+                    color = getNewColor(color)
+                pdf.set_fill_color(*color)
+                lowest, highest = 999999, 0
+                for i in range(gruppo["size"]):
+                    spot = seg.pop(0)
+                    pdf.rect(x=spot.x,y=spot.y,w=spot.w,h=spot.h,style="F")
+                    if spot.x < lowest:
+                        lowest = spot.x
+                    if spot.x+spot.h > highest:
+                        highest = spot.x + spot.h
+                if "_part" not in gruppo["name"]:
+                    labls.append( (f"{gruppo['show_name']}({gruppo['size']})", (lowest + highest)/2 , y + width_t/2, color, degrees(atan2(-width_t, lowest-highest)), horizontal, x, y) )
+                else:
+                    idgp = gruppo["name"].split("_part")[0]
+                    tot_size = split_tot_size.get(idgp, gruppo["size"])
+                    labls.append( (f"{gruppo['show_name']}({gruppo['size']}/{tot_size})", (lowest + highest)/2 , y + width_t/2, color, degrees(atan2(-width_t, lowest-highest)), horizontal, x, y) )
+                
+            pdf.rect(x=x, y=y, w=height_t, h=width_t, style='D') #table border
 
     
     pdf.set_font("Arial", size=8)
     pdf.set_text_color(0, 0, 0) 
-    for lbl, lx, ly, color, angle in labls:
+    for lbl, lx, ly, color, angle, is_horizontal, rot_x, rot_y in labls:
         pdf.set_fill_color(*color)
         text_w = pdf.get_string_width(lbl) + 6
         text_h = 8+2
-        with pdf.rotation(angle, lx, ly):
-            with pdf.local_context(fill_opacity=0.7):
-                pdf.rect(x=lx - text_w/2, y=ly - text_h/2, w=text_w, h=text_h, style='F')
-            pdf.set_text_color(0, 0, 0)
-            pdf.text(x=lx - text_w/2 + 3, y=ly + 3, text=lbl)
+        rotation_ctx = pdf.rotation(90, rot_x, rot_y) if is_horizontal else nullcontext()
+        with rotation_ctx:
+            with pdf.rotation(angle, lx, ly):
+                with pdf.local_context(fill_opacity=0.7):
+                    pdf.rect(x=lx - text_w/2, y=ly - text_h/2, w=text_w, h=text_h, style='F')
+                pdf.set_text_color(0, 0, 0)
+                pdf.text(x=lx - text_w/2 + 3, y=ly + 3, text=lbl)
         
     
-    ## END DRAW LOGIC
+## END DRAW LOGIC
     overlay_bytes = pdf.output()
     overlay_reader = PdfReader(BytesIO(overlay_bytes))
     overlay_page = overlay_reader.pages[0]
+    overlay_page.rotate(270)  # Ruota l'overlay per allinearlo alla planimetria
 
     writer = PdfWriter()
 
     for page in reader.pages:
+        overlay_page.transfer_rotation_to_content()
         page.merge_page(overlay_page)
         writer.add_page(page)
 
-    # START ELENCO DRAWING
+## START ELENCO DRAWING
     elenco_pdf = FPDF(unit="pt", format="A4", orientation="portrait")
     elenco_pdf.add_font("verdana", style="", fname="renderResources/Verdana.ttf", uni=True)
     elenco_pdf.add_page()

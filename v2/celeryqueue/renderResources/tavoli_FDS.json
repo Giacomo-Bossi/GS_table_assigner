@@ -1,0 +1,397 @@
+{
+    "tables": [
+        {
+            "table_id": 1,
+            "capacity": 24,
+            "head_seats": 0,
+            "gui": {
+                "x": 685.5,
+                "y": 220.5,
+                "width": 35,
+                "height": 178.5
+            },
+            "horizontal": true,
+            "tags": {
+                "group": 1
+            }
+        },
+        {
+            "table_id": 2,
+            "capacity": 24,
+            "head_seats": 0,
+            "gui": {
+                "x": 618.5,
+                "y": 220.5,
+                "width": 35,
+                "height": 178.5
+            },
+            "horizontal": true,
+            "tags": {
+                "group": 1
+            }
+        },
+        {
+            "table_id": 3,
+            "capacity": 24,
+            "head_seats": 0,
+            "gui": {
+                "x": 551.5,
+                "y": 220.5,
+                "width": 35,
+                "height": 178.5
+            },
+            "horizontal": true,
+            "tags": {
+                "group": 1
+            }
+        },
+        {
+            "table_id": 4,
+            "capacity": 24,
+            "head_seats": 0,
+            "gui": {
+                "x": 484.5,
+                "y": 220.5,
+                "width": 35,
+                "height": 178.5
+            },
+            "horizontal": true,
+            "tags": {
+                "group": 1
+            }
+        },
+        {
+            "table_id": 5,
+            "capacity": 24,
+            "head_seats": 0,
+            "gui": {
+                "x": 417.5,
+                "y": 220.5,
+                "width": 35,
+                "height": 178.5
+            },
+            "horizontal": true,
+            "tags": {
+                "group": 1
+            }
+        },
+        {
+            "table_id": 6,
+            "capacity": 24,
+            "head_seats": 0,
+            "gui": {
+                "x": 350.5,
+                "y": 220.5,
+                "width": 35,
+                "height": 178.5
+            },
+            "horizontal": true,
+            "tags": {
+                "group": 1
+            }
+        },
+        {
+            "table_id": 7,
+            "capacity": 24,
+            "head_seats": 0,
+            "gui": {
+                "x": 283.5,
+                "y": 220.5,
+                "width": 35,
+                "height": 178.5
+            },
+            "horizontal": true,
+            "tags": {
+                "group": 1
+            }
+        },
+        {
+            "table_id": 8,
+            "capacity": 24,
+            "head_seats": 0,
+            "gui": {
+                "x": 216.5,
+                "y": 220.5,
+                "width": 35,
+                "height": 178.5
+            },
+            "horizontal": true,
+            "tags": {
+                "group": 1
+            }
+        },
+        {
+            "table_id": 9,
+            "capacity": 24,
+            "head_seats": 0,
+            "gui": {
+                "x": 149.5,
+                "y": 220.5,
+                "width": 35,
+                "height": 178.5
+            },
+            "horizontal": true,
+            "tags": {
+                "group": 1
+            }
+        },        
+        {
+            "table_id": 10,
+            "capacity": 8,
+            "head_seats": 0,
+            "gui": {
+                "x": 684,
+                "y": 293,
+                "width": 35,
+                "height": 60.5
+            },
+            "tags": {
+                "group": 2,
+                "near_field": true
+            }
+        },
+        {
+            "table_id": 11,
+            "capacity": 8,
+            "head_seats": 0,
+            "gui": {
+                "x": 684,
+                "y": 360,
+                "width": 35,
+                "height": 60.5
+            },
+            "tags": {
+                "group": 2,
+                "near_field": true
+            }
+        },
+        {
+            "table_id": 12,
+            "capacity": 8,
+            "head_seats": 0,
+            "gui": {
+                "x": 684,
+                "y": 427,
+                "width": 35,
+                "height": 60.5
+            },
+            "tags": {
+                "group": 2,
+                "near_field": true
+            }
+        },
+        {
+            "table_id": 13,
+            "capacity": 8,
+            "head_seats": 0,
+            "gui": {
+                "x": 684,
+                "y": 494,
+                "width": 35,
+                "height": 60.5
+            },
+            "tags": {
+                "group": 2,
+                "near_field": true
+            }
+        },
+        {
+            "table_id": 14,
+            "capacity": 8,
+            "head_seats": 0,
+            "gui": {
+                "x": 684,
+                "y": 561,
+                "width": 35,
+                "height": 60.5
+            },
+            "tags": {
+                "group": 2,
+                "near_field": true
+            }
+        },
+        {
+            "table_id": 15,
+            "capacity": 8,
+            "head_seats": 0,
+            "gui": {
+                "x": 684,
+                "y": 628,
+                "width": 35,
+                "height": 60.5
+            },
+            "tags": {
+                "group": 2,
+                "near_field": true
+            }
+        },
+        {
+            "table_id": 16,
+            "capacity": 8,
+            "head_seats": 0,
+            "gui": {
+                "x": 684,
+                "y": 695,
+                "width": 35,
+                "height": 60.5
+            },
+            "tags": {
+                "group": 2,
+                "near_field": true
+            }
+        },
+        {
+            "table_id": 17,
+            "capacity": 43,
+            "head_seats": 1,
+            "gui": {
+                "x": 317,
+                "y": 293,
+                "width": 35,
+                "height": 323
+            },
+            "tags": {
+                "group": 3
+            }
+        },
+        {
+            "table_id": 18,
+            "capacity": 43,
+            "head_seats": 1,
+            "gui": {
+                "x": 317,
+                "y": 360.25,
+                "width": 35,
+                "height": 323,
+                "head_on": "END"
+            },
+            "tags": {
+                "group": 3
+            }
+        },
+        {
+            "table_id": 19,
+            "capacity": 43,
+            "head_seats": 1,
+            "gui": {
+                "x": 317,
+                "y": 426.75,
+                "width": 35,
+                "height": 323,
+                "head_on": "END"
+            },
+            "tags": {
+                "near_field": true,
+                "group": 3
+            }
+        },
+        {
+            "table_id": 20,
+            "capacity": 35,
+            "head_seats": 1,
+            "gui": {
+                "x": 376.5,
+                "y": 493.75,
+                "width": 35,
+                "height": 263.5,
+                "head_on": "END"
+            },
+            "tags": {
+                "group": 3
+            }
+        },
+        {
+            "table_id": 21,
+            "capacity": 35,
+            "head_seats": 1,
+            "gui": {
+                "x": 376.5,
+                "y": 560.5,
+                "width": 35,
+                "height": 263.5,
+                "head_on": "END"
+            },
+            "tags": {
+                "group": 3
+            }
+        },
+        {
+            "table_id": 22,
+            "capacity": 35,
+            "head_seats": 1,
+            "gui": {
+                "x": 376.5,
+                "y": 627.5,
+                "width": 35,
+                "height": 263.5,
+                "head_on": "END"
+            },
+            "tags": {
+                "group": 3
+            }
+        },
+        {
+            "table_id": 23,
+            "capacity": 35,
+            "head_seats": 1,
+            "gui": {
+                "x": 376.5,
+                "y": 694.5,
+                "width": 35,
+                "height":  263.5,
+                "head_on": "END"
+            },
+            "tags": {
+                "group": 3
+            }
+        },
+        {
+            "table_id": 24,
+            "capacity": 27,
+            "head_seats": 1,
+            "gui": {
+                "x": 540,
+                "y": 805.5,
+                "width": 35,
+                "height": 204,
+                "head_on": "END"
+            },
+            "tags": {
+                "group": 4
+            }
+        },
+        {
+            "table_id": 25,
+            "capacity": 24,
+            "head_seats": 0,
+            "gui": {
+                "x": 565.5,
+                "y": 872.5,
+                "width": 35,
+                "height": 178.5
+            },
+            "tags": {
+                "group": 4
+            }
+        },
+        {
+            "table_id": 26,
+            "capacity": 24,
+            "head_seats": 0,
+            "gui": {
+                "x": 565.5,
+                "y": 939.5,
+                "width": 35,
+                "height": 178.5
+            },
+            "tags": {
+                "group": 4
+            }
+        }
+    ],
+    "draw_params": {
+        "head_lateral_seats_offset": 6.5,
+        "head_other_seats_offset": 26.5,
+        "seats_stride": 14.87
+    }
+}
