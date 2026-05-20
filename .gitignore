@@ -8,7 +8,10 @@ vendor/
 ## Ignores __ (test files)
 __* 
 
+docker-compose.override.yml
 
+
+### Pregenerated gitignore for Python
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

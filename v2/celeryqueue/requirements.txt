@@ -6,3 +6,4 @@ mip
 fpdf2
 pypdf
 jsonschema==4.23.0
+requests

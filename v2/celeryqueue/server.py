@@ -2,6 +2,11 @@ from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from tasks import run_mip_task
 from renderer import EventInfo, generaSegnaposti, generaMappa
+import os
+from redis import Redis
+
+
+redis_client = Redis(host="redis", port=6379, db=0, decode_responses=True)
 
 app = Flask(__name__)
 CORS(app)
@@ -31,7 +36,13 @@ def get_status(task_id):
     
 @app.get("/jobs")
 def list_all_jobs():
-    return jsonify({"jobs": list_jobs}), 200
+    r = redis_client
+    try:
+        keys = r.keys("celery-task-meta-*")
+        task_ids = [k.split("celery-task-meta-", 1)[1] for k in keys]
+        return jsonify({"jobs": task_ids, "keys": keys}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.get("/download/<task_id>/map")
 def download_map(task_id):
@@ -41,7 +52,7 @@ def download_map(task_id):
     
     try:
         data = generaMappa(task.result, title="FESTA D'INVERNO 2026")
-        return Response(data, mimetype='application/pdf', headers={"Content-Disposition": "attachment;filename=mappa_{}.pdf".format(task_id)})
+        return Response(data, mimetype='application/pdf' )# , headers={"Content-Disposition": "attachment;filename=mappa_{}.pdf".format(task_id)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

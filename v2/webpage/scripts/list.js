@@ -3,12 +3,13 @@ $(document).ready(function() {
         .then(response => response.json())
         .then(data => {
             const jobsList = $('#tableBody');
-            for (const [idx, jobId] of data.jobs.entries()){
+            
+            for (const [idx, jobId] of data.jobs.entries()){  
                 jobsList.append(`<tr id="${jobId}">
-                    <td>${idx + 1}</td>
+                    <td>${data.jobs.length - idx}</td>
                     <td ></td>
                     <td><i class="ri-loader-2-line jobIcon execJob"></i></td>
-                    <td><button disabled><i class="ri-eye-line"></i></button><button disabled><i class="ri-delete-bin-line"></i></button></td>
+                    <td><button><i class="ri-file-paper-2-fill" onclick="document.location.href='solver/download/${jobId}/placeholders'"></i></button><button><i class="ri-treasure-map-line" onclick="document.location.href='solver/download/${jobId}/map'"></i></button></td>
                 </tr>`);
                 
                 const updateJobStatus = () => {

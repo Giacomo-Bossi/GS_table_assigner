@@ -8,8 +8,8 @@ async function createJob(file) {
         console.log("Generated gruppi data:", gruppiData);
 
         // load table configuration
-        const tavoliResponse = await fetch('tavoli.json');
-        const tavoliData = await tavoliResponse.json();
+        const tavoliResponse = await fetch('tavoli_FDS.json');
+        const tavoliData = (await tavoliResponse.json()).tables;
         console.log("Loaded tavoli data:", tavoliData);
 
         jobCall(gruppiData, tavoliData);
@@ -181,10 +181,10 @@ function generateGruppiJSON(csvString) {
             show_name: values[2], // nome visualizzato
             size: parseInt(values[3], 10), // dimensione del gruppo
             required_head: values[5].toLowerCase() === 'vero' || values[5].toLowerCase() === 'true', // il gruppo richiede un posto capotavola
-            near_field: false, // [FUTURE] for future use, richiesto tavolo con vista campo
-            close_to: []  // [FUTURE] for future use, richiesto vicino a (lista di id di altri gruppi, soft requirement) 
+            near_field: values.length > 7 && (values[7].toLowerCase() === 'vero' || values[7].toLowerCase() === 'true'), // il gruppo richiede un posto vicino al campo
+            close_to: values.length > 6 ? values[6] : null  // [FUTURE] for future use, richiesto vicino a (id di un altro gruppo) 
         });
     }
-
+    console.log("Parsed groups data:", data);
     return data;
 }
