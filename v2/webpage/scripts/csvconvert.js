@@ -25,6 +25,29 @@ async function jobCall(gruppiData, tavoliData) {
         for (let [idx, tavolo] of tavoliData.entries()) {
             assegnamentiManuali[""+`${tavolo.table_id}`] = [];
         }
+
+        const fieldANDheadGroups = tavoliData.some(t => t.tags.near_field && t.head_seats > 0);
+        let gruppiCampo = gruppiData.filter(g => g.near_field);
+        gruppiData = gruppiData.filter(g => !gruppiCampo.includes(g)); // remove near field groups from main array, they will be re-added if not assigned to a near field table
+        for(let gruppo of gruppiCampo) {
+            if(fieldANDheadGroups==false && gruppo.required_head) { // messaggio specifico se ci sono gruppi che richiedono posto capotavola e tavoli vicino al campo, mostrato solo se non esiste neanche un tavolo compatibile (se esiste ma è pieno usa il messaggio generico)
+                console.error("Groups requiring head seat cannot be assigned to near field tables, group that fails check: ", gruppo);
+                throw new Error("Groups requiring head seat cannot be assigned to near field tables, group that fails check: " + gruppo.name);
+            }
+
+            let tavolo = tavoliData.find(t => t.tags.near_field && t.capacity >= gruppo.size && (!gruppo.required_head || t.head_seats));
+            if (tavolo) {
+                assegnamentiManuali[`${tavolo.table_id}`].push(gruppo.name);
+                tavoliData.find(t => t.table_id === tavolo.table_id).capacity -= gruppo.size; // reduce available capacity
+                gruppiAssegnati.push(gruppo);
+
+            } else {
+                console.error("No suitable table (near field) found for group:", gruppo);
+                throw new Error("No suitable table (near field) found for group: " + gruppo.name);
+            }
+        }
+
+
         let biggestTableCapacity = tavoliData.reduce((maxCap, t) => Math.max(maxCap, t.capacity), 0);
         let gruppiGrossi = gruppiData.filter(g => g.size > biggestTableCapacity);
 
@@ -52,6 +75,7 @@ async function jobCall(gruppiData, tavoliData) {
                     giàAssegnatoA.push(tavolo.table_id);
                 } else {
                     console.error("No suitable table found for head group:", nuovoGruppoTesta);
+                    throw new Error("No suitable table found for head group: " + nuovoGruppoTesta.name);
                 }
                 tavoliData.find(t => t.table_id === tavolo.table_id).capacity -= nuovoGruppoTesta.size; // reduce available capacity
                 
@@ -98,6 +122,7 @@ async function jobCall(gruppiData, tavoliData) {
                     }
                 } else {
                     console.error("No suitable table found for group part:", nuovoGruppo);
+                    throw new Error("No suitable table found for group part: " + nuovoGruppo.name);
                 }
                 tavoliData.find(t => t.table_id === tavolo.table_id).capacity -= nuovoGruppo.size; // reduce available capacity
                 biggestTableCapacity = tavoliData.reduce((maxCap, t) => Math.max(maxCap, t.capacity), 0);
