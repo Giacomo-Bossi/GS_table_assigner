@@ -1,6 +1,6 @@
 """
 Dev server per preview live del PDF.
-Quando modifichi renderer.py, il browser si ricarica automaticamente.
+Ricarica automaticamente la pagina quando si modificano le risorse.
 
 Esegui con: python dev_preview.py
 Apri: http://localhost:8000
@@ -33,7 +33,7 @@ def load_renderer():
     import renderer
     reload(renderer)
     
-    with open("__resulttorender.json", "r", encoding="utf-8") as f:
+    with open("__result2.json", "r", encoding="utf-8") as f:
         result = json.load(f)
     pdf = renderer.generaMappa(result, title="FESTA D'INVERNO 2026")
     return pdf
@@ -110,28 +110,28 @@ class PDFHandler(BaseHTTPRequestHandler):
 
 class RendererWatcher(FileSystemEventHandler):
     def on_modified(self, event):
-        if event.src_path.endswith("renderer.py"):
+        if event.src_path.endswith("renderer.py") or event.src_path.endswith(".json"):
             now = time.time()
             # Debounce: ignora se l'ultimo evento è stato meno di DEBOUNCE_SECONDS fa
             if now - last_change_time["t"] < DEBOUNCE_SECONDS:
                 return
             last_change_time["t"] = now
             version["v"] += 1
-            log(f"\n🔄 renderer.py modificato! Versione: {version['v']}")
+            log(f"\n🔄 renderer.py o json modificati! Versione: {version['v']}")
 
 
 def main():
     port = 8000
     
-    # Watcher per renderer.py
+    # Watcher per renderer.py e tutto ciò che influisce sul PDF
     observer = Observer()
-    observer.schedule(RendererWatcher(), path=".", recursive=False)
+    observer.schedule(RendererWatcher(), path=".", recursive=True)
     observer.start()
     
     # Server HTTP
     server = HTTPServer(("0.0.0.0", port), PDFHandler)
     log(f"🚀 Dev server avviato su http://localhost:{port}")
-    log(f"📄 Modifica renderer.py e il PDF si aggiornerà automaticamente!")
+    log(f"📄 Modifica renderer.py o i file JSON e il PDF si aggiornerà automaticamente!")
     log(f"   Premi Ctrl+C per fermare.\n")
     
     # Apri browser automaticamente

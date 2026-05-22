@@ -131,7 +131,7 @@ def generaMappa(
     pdf.add_font("verdana", style="", fname="renderResources/Verdana.ttf", uni=True)
     pdf.add_page()
     
-## START DRAW LOGIC
+## START DRAW LOGIC ##################################
     
     
     # change header title
@@ -321,20 +321,26 @@ def generaMappa(
                 pdf.text(x=lx - text_w/2 + 3, y=ly + 3, text=lbl)
         
     
-## END DRAW LOGIC
+## END DRAW LOGIC ##################################
     overlay_bytes = pdf.output()
     overlay_reader = PdfReader(BytesIO(overlay_bytes))
     overlay_page = overlay_reader.pages[0]
-    overlay_page.rotate(270)  # Ruota l'overlay per allinearlo alla planimetria
+    #overlay_page.rotate(270)  # Ruota l'overlay per allinearlo alla planimetria
 
     writer = PdfWriter()
 
     for page in reader.pages:
         overlay_page.transfer_rotation_to_content()
+        page.rotate(270)  # Ruota la pagina della planimetria per allinearla all'overlay
+        #page.transfer_rotation_to_content()
         page.merge_page(overlay_page)
         writer.add_page(page)
 
-## START ELENCO DRAWING
+
+
+
+
+## START ELENCO DRAWING ###########################
     elenco_pdf = FPDF(unit="pt", format="A4", orientation="portrait")
     elenco_pdf.add_font("verdana", style="", fname="renderResources/Verdana.ttf", uni=True)
     elenco_pdf.add_page()
@@ -413,7 +419,7 @@ def generaMappa(
                 elenco_pdf.text(x=tn_x, y=text_y, text=table_no)
     
     
-    # END ELENCO DRAWING
+# END ELENCO DRAWING ###########################
 
     title_bytes = elenco_pdf.output()
     title_reader = PdfReader(BytesIO(title_bytes))
