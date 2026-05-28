@@ -140,17 +140,19 @@ async function jobCall(gruppiData, tavoliData) {
     }
     // external solver call
     try {
+        const payload = JSON.stringify({
+                groups: gruppiData,
+                tables: tavoliData,
+                assignments: assegnamentiManuali,
+                assignments_groups: gruppiAssegnati
+            })
+            
         const response = await fetch('solver/start_job', { 
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                groups: gruppiData,
-                tables: tavoliData.map(t => ({ table_id: t.table_id, capacity: t.capacity, head_seats: t.head_seats || 0, show_name: t.show_name || "" })),
-                assignments: assegnamentiManuali,
-                assignments_groups: gruppiAssegnati
-            })
+            body: payload
         });
         const result = await response.json();
         if (!response.ok) {
