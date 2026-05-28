@@ -2,7 +2,7 @@ from celery import Celery
 from celery.utils.log import get_task_logger
 import mip
 import time
-import Table_problem_optimizer as Opt
+import Optimizer.Table_problem_optimizer as Opt
 
 # NOTA: host='redis' punta al docker "redis"
 celery_app = Celery('tasks', 

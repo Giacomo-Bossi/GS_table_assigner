@@ -2,6 +2,7 @@ import json
 import mip
 import time
 from mip import OptimizationStatus
+#from solver_utils import Table, Reservation,Aggregate_reservation, Prog_id_gen TODO adapt to moved imports
 
 def calculate_lambda_coeff(num_tables : int)->float:
         """
@@ -173,7 +174,8 @@ class Table_problem_optimizer():
             }
     
 if __name__ == "__main__":
-    with open("C:\\Users\\giaco\\projects\\python\\tmp\\GS_table_assigner\\ILP_solver\\Examples\\csvconvert-impossible.json","r") as file:
-        opt = Table_problem_optimizer(json.load(file))
-        opt.solve_problem()
-        opt.write_sol_to_file("out.json")
+    with open("v2\\celeryqueue\\Optimizer_engine\\Adjacent_test.json","r") as file:
+        print("loaded")
+        #opt = Table_problem_optimizer(json.load(file))
+        #opt.solve_problem()
+        #opt.write_sol_to_file("out.json")
