@@ -23,6 +23,8 @@ class Table():
         return self.near_field
     def set_model_id(self,new_id:int):
         self.model_id = new_id
+    def set_head_seat(self,head_seat:bool):
+        self.head_seats = int(head_seat)
     def copy(self):
         return Table(self.original_dict,self.model_id)
     def resize(self,new_capacity:int):
@@ -54,6 +56,10 @@ class Reservation():
         return self.near_field
     def set_model_id(self,new_id:int):
         self.model_id = new_id
+    def set_require_head(self,require_head:bool):
+        self.require_head = require_head
+    def set_near_field(self,near_field:bool):
+        self.near_field = near_field
     def split(self):
         """
         Defines how to split a reservation if it cannot be assigned to a single table.

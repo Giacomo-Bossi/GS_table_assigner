@@ -24,11 +24,6 @@ class Solver_handler():
         self.assigned_res_names = set() 
         self.assignments = {} #dict of table_id to list of reservation names, used to keep track of assignements thorugh steps
         self.assignments = {t.get_table_id(): [] for t in self.tables}
-        
-        self.totat_seats = sum(t.get_capacity() for t in self.tables)
-        self.total_guests = sum(r.get_size() for r in self.reservations)
-        self.total_assignable = 0
-        self.used_tables = 0
 
         self.presolution_steps = []
     
@@ -54,15 +49,30 @@ class Solver_handler():
         #update tables
         for tab in self.tables:
             if len(self.assignments[tab.get_table_id()]) > 0:
+                resized_table = tab.copy()
+
                 assigned_size = sum(
                     r.get_size() for r in self.reservations
                     if r.get_name() in self.assignments[tab.get_table_id()]
                 )
+               
                 remaining_capacity = tab.get_capacity() - assigned_size
                 if remaining_capacity < 0: 
-                    raise ValueError(f"Table {tab.get_table_id()} overassigned: assigned size {assigned_size} exceeds capacity {tab.get_capacity()}.")
-                resized_table = tab.copy()
+                    raise ValueError(f"Table {tab.get_table_id()} overassigned: assigned size {assigned_size} \
+                                     exceeds capacity {tab.get_capacity()}.")
+                
                 resized_table.resize(remaining_capacity)
+
+                heads_assigned = sum(
+                    r.get_require_head() for r in self.reservations
+                    if r.get_name() in self.assignments[tab.get_table_id()]
+                )
+                remaining_head_seats = tab.get_head_seats() - heads_assigned
+                if remaining_head_seats < 0:
+                    raise ValueError(f"Table {tab.get_table_id()} overassigned head seats: assigned head seats \
+                                     {heads_assigned} exceeds head seat capacity {tab.get_head_seats()}.")
+                resized_table.set_head_seat(remaining_head_seats)
+
                 self.current_tables.append(resized_table)
             else:
                 self.current_tables.append(tab)
@@ -82,4 +92,22 @@ class Solver_handler():
             self.update_current_state(new_assignements)
 
     def get_results(self):
-        pass
+        """Returns the final results after running the solution steps.
+        """
+        used_tab = sum(1 for assign in self.assignments.values() if len(assign) > 0)
+        total_seats = sum(t.get_capacity() for t in self.tables)
+        total_guests = sum(r.get_size() for r in self.reservations)
+        total_assignable = sum(
+            r.get_size()
+            for r in self.reservations
+            if r.get_name() in self.assigned_res_names
+        )
+
+        return {
+            "pairings": self.assignments,
+            "used_tables": used_tab,
+            "total seats": total_seats,
+            "total guests": total_guests,
+            "total assignable": total_assignable,
+            "warnings": self.warnings
+        } 
