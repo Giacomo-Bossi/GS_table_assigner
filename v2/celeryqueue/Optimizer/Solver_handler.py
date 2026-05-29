@@ -3,9 +3,10 @@ from error_types import *
 class Solver_handler():
     
     def __init__(self,data):
+        #warnings are non critical issues with the data that should be reported to the user 
+        #but do not prevent the solver from running, such as duplicate table names or reservation names.
         self.data = data
-        self.warnings = []
-        self.errors = []
+        self.warnings = []  
 
         try:
             self.parser = ILP_data_parser(self.data)

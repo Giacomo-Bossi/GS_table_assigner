@@ -8,36 +8,38 @@ import os
 import glob
 
 #this file tests the behaivor of the data parser, should be called from the repository root
-class DataParserTestCase(unittest.TestCase):
+class DataParserTestCase(unittest.TestCase): #TODO make test more robust
     
     def test_dupe_table_names(self):
         print("\nTesting duplicate table names...")
-        with open("v2\\celeryqueue\\Optimizer_engine\\tests\\duped_tables.json","r") as file:
-            with self.assertRaises(Dupe_id_error):
-             ILP_data_parser(json.load(file))
-
+        with open("v2\\celeryqueue\\Optimizer\\tests\\duped_tables.json","r") as file:
+            warnings_list = []
+            ILP_data_parser(json.load(file), warnings_list=warnings_list)
+            assert any("Duplicate table_id '1' renamed to '1_1'." in warning for warning in warnings_list)
+            
     def test_dupe_reservation_names(self):
         print("\nTesting duplicate reservation names...")
-        with open("v2\\celeryqueue\\Optimizer_engine\\tests\\duped_reservation.json","r") as file:
-            with self.assertRaises(Dupe_id_error):
-                ILP_data_parser(json.load(file))
+        with open("v2\\celeryqueue\\Optimizer\\tests\\duped_reservation.json","r") as file:
+            warnings_list = []
+            ILP_data_parser(json.load(file), warnings_list=warnings_list)
+            assert len(warnings_list) > 0
 
     def test_invalid_schema(self):
         print("\nTesting invalid schema...")
-        with open("v2\\celeryqueue\\Optimizer_engine\\tests\\invalid_schema.json","r") as file:
+        with open("v2\\celeryqueue\\Optimizer\\tests\\invalid_schema.json","r") as file:
             with self.assertRaises(Invalid_schema_error):
                 ILP_data_parser(json.load(file))
 
-    def test_parse_tables(self): #TODO make test more robust
+    def test_parse_tables(self): 
         print("\nTesting table parsing...")
-        with open("v2\\celeryqueue\\Optimizer_engine\\tests\\Adjacent_test.json","r") as file:
+        with open("v2\\celeryqueue\\Optimizer\\tests\\Adjacent_test.json","r") as file:
             parser = ILP_data_parser(json.load(file))
             tables = parser.parse_tables()
             self.assertEqual(len(tables), 26)
 
     def test_extract_adjacency_sets(self):
         print("\nTesting adjacency set extraction...")
-        with open("v2\\celeryqueue\\Optimizer_engine\\tests\\Adjacent_test.json","r") as file:
+        with open("v2\\celeryqueue\\Optimizer\\tests\\Adjacent_test.json","r") as file:
             parser = ILP_data_parser(json.load(file))
             adjacency_sets = parser.extract_adjacency_sets()
             expected_sets = [{'2326'}, {'2326', '2328'}, {'2329'}] 
@@ -49,7 +51,7 @@ class DataParserTestCase(unittest.TestCase):
 
     def test_parse_reservations(self):
         print("\nTesting reservation parsing and aggregation...")
-        with open("v2\\celeryqueue\\Optimizer_engine\\tests\\Adjacent_test.json","r") as file:
+        with open("v2\\celeryqueue\\Optimizer\\tests\\Adjacent_test.json","r") as file:
             parser = ILP_data_parser(json.load(file))
             reservations = parser.parse_reservations()
             expected_names = {"2326+2328", "2329"}
@@ -65,7 +67,7 @@ class DataParserTestCase(unittest.TestCase):
             assert any(res.size == size_2329 and res.name == "2329" for res in reservations)
 
 def prettyfy_test_jsons(verbose=False):
-    test_dir = "v2\\celeryqueue\\Optimizer_engine\\tests"
+    test_dir = "v2\\celeryqueue\\Optimizer\\tests"
     json_files = glob.glob(os.path.join(test_dir, "*.json"))
 
     for json_file in json_files:
