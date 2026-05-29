@@ -20,7 +20,7 @@
                     },
                     "head_seats": {
                         "description": "wether the table has a head seat",
-                        "type":["boolean","integer","string"]
+                        "type":["boolean","integer"]
                     }
                 },
                 "required": ["table_id", "capacity"]
@@ -59,6 +59,9 @@
                                 "type": ["string", "integer"]
                             }
                         ]
+                    },
+                    "near_field":{
+                        "description": "wether the group should be have be put near to the football field"
                     }
                 },
                 "required": ["name", "size"]

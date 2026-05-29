@@ -1,7 +1,9 @@
 from data_parser import ILP_data_parser
 from error_types import *
+import jsonschema
+from typing import Callable
+
 class Solver_handler():
-    
     def __init__(self,data):
         #warnings are non critical issues with the data that should be reported to the user 
         #but do not prevent the solver from running, such as duplicate table names or reservation names.
@@ -10,13 +12,74 @@ class Solver_handler():
 
         try:
             self.parser = ILP_data_parser(self.data)
-        except ValueError as e:
-            self.errors.append(str(e))
+        except Invalid_schema_error as e:
+            pass #TODO handle
+        except Invalid_data_error as e:
+            pass 
 
-        try:
-            self.tables = self.parser.parse_tables()
-        except ValueError as e:
-            self.errors.append(str(e))
-        self.tables = self.parser.tables
-        self.aggregated_reservations = self.parser.aggregated_reservations
+        self.tables = self.parser.parse_tables()
+        self.reservations = self.parser.parse_reservations()
+        self.current_tables = self.tables.copy()
+        self.current_reservations = self.reservations.copy()
+        self.assigned_res_names = set() 
+        self.assignments = {} #dict of table_id to list of reservation names, used to keep track of assignements thorugh steps
+        self.assignments = {t.get_table_id(): [] for t in self.tables}
+        
+        self.totat_seats = sum(t.get_capacity() for t in self.tables)
+        self.total_guests = sum(r.get_size() for r in self.reservations)
+        self.total_assignable = 0
+        self.used_tables = 0
 
+        self.presolution_steps = []
+    
+
+    def update_current_state(self,new_assignments:dict[str,list[str]]):
+        """Updates the current tables, reservations and assignements based on new assignements from a presolver step.
+        """
+        #update assignements with new assignements
+        self.current_tables = []
+        self.current_reservations = []
+
+        #update reservations
+        for table_id, res_names_list in new_assignments.items():
+            for res_name in res_names_list:
+                self.assigned_res_names.add(res_name)
+                self.assignments[table_id].append(res_name)
+                
+        self.current_reservations = [
+            r for r in self.reservations
+            if r.get_name() not in self.assigned_res_names
+        ]
+
+        #update tables
+        for tab in self.tables:
+            if len(self.assignments[tab.get_table_id()]) > 0:
+                assigned_size = sum(
+                    r.get_size() for r in self.reservations
+                    if r.get_name() in self.assignments[tab.get_table_id()]
+                )
+                remaining_capacity = tab.get_capacity() - assigned_size
+                if remaining_capacity < 0: 
+                    raise ValueError(f"Table {tab.get_table_id()} overassigned: assigned size {assigned_size} exceeds capacity {tab.get_capacity()}.")
+                resized_table = tab.copy()
+                resized_table.resize(remaining_capacity)
+                self.current_tables.append(resized_table)
+            else:
+                self.current_tables.append(tab)
+                
+    def configure_presolver(self,presolution_steps:list[Callable]):
+        """
+        Configures the solver with the parsed tables and reservations, and any additional constraints or parameters.
+        """
+        self.presolution_steps = presolution_steps
+
+    def run_solution_steps(self):
+        """Runs the solution steps in sequence. Updates itself in between steps.
+        """        
+        for step in self.presolution_steps:
+            new_assignements = step(self.current_tables, self.current_reservations, self.warnings)
+
+            self.update_current_state(new_assignements)
+
+    def get_results(self):
+        pass

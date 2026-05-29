@@ -3,7 +3,7 @@ import json
 from typing import TypeVar, List, Set
 from solver_utils import Table, Reservation,Aggregate_reservation, Prog_id_gen
 from error_types import *
-
+from mnemonics import *
 T = TypeVar('T')
 
 
@@ -63,35 +63,35 @@ class ILP_data_parser():
         """
         table_names = set()
         for tab in self.data["tables"]:
-            tab["table_id"] = str(tab["table_id"]) # Ensure the table_id is a string for consistent handling
-            if tab["table_id"] in table_names:
+            tab[TABLE_ID_ATTR] = str(tab[TABLE_ID_ATTR]) # Ensure the table_id is a string for consistent handling
+            if tab[TABLE_ID_ATTR] in table_names:
                 
-                original_id = tab["table_id"]
+                original_id = tab[TABLE_ID_ATTR]
                 i = 1
                 new_id = f"{original_id}_{i}"
                 while new_id in table_names:
                     i += 1
                     new_id = f"{original_id}_{i}"
-                tab["table_id"] = new_id
+                tab[TABLE_ID_ATTR] = new_id
                 self.warnings.append(f"Duplicate table_id '{original_id}' renamed to '{new_id}'.")
-            table_names.add(tab["table_id"])
+            table_names.add(tab[TABLE_ID_ATTR])
 
     def canonize_reservations(self):
         """
-        Check for duplicate reservation names and invalid "close_to" references in the input data.
+        Check for duplicate reservation names and invalid RESERVATION_CLOSE_TO_ATTR references in the input data.
         This method iterates through the list of reservations in the input data and checks for duplicate reservation names.
         It attempts to fix duplicate names by appending a unique suffix, this will be signaled with a warning message to the warnings list.\n
-        It also checks the "close_to" field of each reservation for invalid references to other reservations, removing any invalid references and adding a warning message for each one.\n
-        If a "close_to" reference points to a name that was a duplicate in the input, it raises an error since this creates ambiguity.
+        It also checks the RESERVATION_CLOSE_TO_ATTR field of each reservation for invalid references to other reservations, removing any invalid references and adding a warning message for each one.\n
+        If a RESERVATION_CLOSE_TO_ATTR reference points to a name that was a duplicate in the input, it raises an error since this creates ambiguity.
         """
         groups_names = set()
         duplicate_reservation_names = []
 
         for res in self.data["groups"]:
-            res["name"] = str(res["name"]) # Ensure the name is a string for consistent handling
+            res[RESERVATION_NAME_ATTR] = str(res[RESERVATION_NAME_ATTR]) # Ensure the name is a string for consistent handling
             
-            if res["name"] in groups_names:
-                original_name = res["name"]
+            if res[RESERVATION_NAME_ATTR] in groups_names:
+                original_name = res[RESERVATION_NAME_ATTR]
                 duplicate_reservation_names.append(original_name)
                 
                 i = 1
@@ -99,41 +99,41 @@ class ILP_data_parser():
                 while new_name in groups_names:
                     i += 1
                     new_name = f"{original_name}_{i}"
-                res["name"] = new_name
+                res[RESERVATION_NAME_ATTR] = new_name
                 self.warnings.append(f"Duplicate reservation name '{original_name}' renamed to '{new_name}'.")
                 
-            groups_names.add(res["name"])
+            groups_names.add(res[RESERVATION_NAME_ATTR])
 
-            #normalize the "close_to" field to always be a list of strings for consistent handling in later processing steps
-            if res.get("close_to", None) is None:
-                res["close_to"] = []
+            #normalize the RESERVATION_CLOSE_TO_ATTR field to always be a list of strings for consistent handling in later processing steps
+            if res.get(RESERVATION_CLOSE_TO_ATTR, None) is None:
+                res[RESERVATION_CLOSE_TO_ATTR] = []
                 continue
         
-            if res.get("close_to", None) is not None:
+            if res.get(RESERVATION_CLOSE_TO_ATTR, None) is not None:
                 # Handle both single item and array
-                close_to_value = res["close_to"]
+                close_to_value = res[RESERVATION_CLOSE_TO_ATTR]
                 if isinstance(close_to_value, list):
-                    res["close_to"] = [str(close) for close in close_to_value if close not in (None, "")]
+                    res[RESERVATION_CLOSE_TO_ATTR] = [str(close) for close in close_to_value if close not in (None, "")]
                 else:
-                    res["close_to"] = [str(close_to_value)] if close_to_value not in (None, "") else []
+                    res[RESERVATION_CLOSE_TO_ATTR] = [str(close_to_value)] if close_to_value not in (None, "") else []
         
         for res in self.data["groups"]:
             valid_close_to = []
-            for close in res["close_to"]:
+            for close in res[RESERVATION_CLOSE_TO_ATTR]:
                 if close == "":
                     continue
                 # if a close_to reference points to a name that was a duplicate in the input, that's an error
                 if close in self.duplicate_reservation_names:
                     raise Invalid_data_error(
-                        f'close_to reference "{close}" in reservation "{res["name"]}" refers to a duplicate reservation name from input.'
+                        f'close_to reference "{close}" in reservation "{res[RESERVATION_NAME_ATTR]}" refers to a duplicate reservation name from input.'
                     )
                 if close not in groups_names:
                     self.warnings.append(
-                        f'Undefined reference in "close_to" removed: "{close}" from reservation "{res["name"]}".'
+                        f'Undefined reference in RESERVATION_CLOSE_TO_ATTR removed: "{close}" from reservation "{res[RESERVATION_NAME_ATTR]}".'
                     )
                     continue
                 valid_close_to.append(close)
-            res["close_to"] = valid_close_to
+            res[RESERVATION_CLOSE_TO_ATTR] = valid_close_to
 
 
     def extract_adjacency_sets(self)->list[set[str]]:
@@ -154,9 +154,9 @@ class ILP_data_parser():
  
         for res in self.data["groups"]:
             
-            close_to = res["close_to"]
+            close_to = res[RESERVATION_CLOSE_TO_ATTR]
             adjacency_set = set()
-            adjacency_set.add(res["name"])
+            adjacency_set.add(res[RESERVATION_NAME_ATTR])
 
             for close in close_to:
                 if close in adjacency_set:
@@ -182,7 +182,7 @@ class ILP_data_parser():
             raise Invalid_schema_error(f"Input data does not conform to the required schema: {str(e)}") 
         #print("Data is valid.")
        
-    def parse_tables(self):
+    def parse_tables(self)->list[Table]:
         """
         parses and extracts a list of Table objects from the input data bind to the parser in the constructor.
         """
@@ -191,13 +191,20 @@ class ILP_data_parser():
             return self.tables
 
         self.tables = []
-        id_gen = Prog_id_gen()
         for tab in self.data["tables"]:
-            self.tables.append(Table(tab, id_gen.get_next()))
+            self.tables.append(Table(tab))
 
-        return self.tables
+        return self.tables.copy()
     
-    def parse_reservations(self):
+    def parse_reservations(self)->list[Reservation]:
+        """
+        Parses and extracts a list of Reservation objects from the input data bind to the parser in the constructor.
+        It also handles the aggregation of reservations based on the RESERVATION_CLOSE_TO_ATTR field in the input.
+            Raises
+            ------    
+        ValueError
+            If a RESERVATION_CLOSE_TO_ATTR reference points to a name that was a duplicate in the input, since this creates ambiguity in the aggregation process.
+        """
         # return cached aggregated reservations if already parsed
         if self.aggregated_reservations is not None:
             return self.aggregated_reservations
@@ -207,18 +214,15 @@ class ILP_data_parser():
         trans_closed_sets = transitive_closure(adjacency_sets)
 
         self.aggregated_reservations = []
-
-        res_id_gen = Prog_id_gen()
-        agg_res_id_gen = Prog_id_gen()
-
+    
         for s in trans_closed_sets:
             res_list = []
             for res in self.data["groups"]:
-                if res["name"] in s:
-                    res_list.append(Reservation(res, res_id_gen.get_next()))
-            self.aggregated_reservations.append(Aggregate_reservation(res_list, agg_res_id_gen.get_next()))
+                if res[RESERVATION_NAME_ATTR] in s:
+                    res_list.append(Reservation(res))
+            self.aggregated_reservations.append(Aggregate_reservation(res_list))
 
-        return self.aggregated_reservations
+        return self.aggregated_reservations.copy()
 
 if __name__ == "__main__":
     with open("v2\\celeryqueue\\Optimizer_engine\\Adjacent_test.json","r") as file:

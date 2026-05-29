@@ -2,56 +2,28 @@ import json
 import mip
 import time
 from mip import OptimizationStatus
-#from solver_utils import Table, Reservation,Aggregate_reservation, Prog_id_gen TODO adapt to moved imports
+from solver_utils import Table, Reservation, Prog_id_gen #TODO adapt to moved imports
 
 def calculate_lambda_coeff(num_tables : int)->float:
         """
         assigns the table penalty in a way that does not affect the number of people that can fit
         """
         return 1/(num_tables+1)
-
-class Prog_id_gen():
-    def __init__(self):
-        self.curr_id = 0
-    def get_next(self):
-        ret = self.curr_id
-        self.curr_id+=1
-        return ret
-
-class Table():
-    def __init__(self,table,prog_id):
-        self.table_id = table["table_id"]
-        self.capacity = table["capacity"]
-        self.head_seats = table.get("head_seats", 0)
-        self.model_id = prog_id
-
-class Reservation():          
-    def __init__(self,reservation,prog_id):
-          self.name = reservation["name"]
-          self.size = reservation["size"]
-          self.require_head = reservation.get("required_head",0)
-          self.model_id = prog_id
         
 class Table_problem_optimizer():
-    def __init__(self,json_object,minimize_entropy=False):
+    def __init__(self,table_list:list[Table],Reservation_list:list[Reservation],minimize_entropy=False):
         
-        self.tables = []
-        id_gen = Prog_id_gen()
-
-        
-        for table in json_object["tables"]:
-            if table["capacity"] > 0:
-                self.tables.append(Table(table,id_gen.get_next()))
-
-        self.reservations = []
-        id_gen = Prog_id_gen()
-
-        for res in json_object["groups"]:
-            if res["size"] > 0:
-                self.reservations.append(Reservation(res,id_gen.get_next()))
-
-        self.grps = json_object["groups"]
+        self.tables = table_list.copy()
+        self.reservations = Reservation_list.copy()
         self.model = mip.Model(sense=mip.MAXIMIZE)
+
+        #ensure integer model ids are suitable for indexing variables
+        tab_prog_id_gen = Prog_id_gen()
+        for tab in self.tables:
+            tab.set_model_id(tab_prog_id_gen.get_next())
+        res_prog_id_gen = Prog_id_gen()
+        for res in self.reservations:
+            res.set_model_id(res_prog_id_gen.get_next())
 
         #self.model.max_mip_gap = 0.02 #2% tolerance to best possible solution
         #self.model.max_seconds = 30
@@ -81,26 +53,26 @@ class Table_problem_optimizer():
 
         self.assignement_vars = [[self.model.add_var(var_type=mip.BINARY,name=f"assign_g{str(i.model_id)}_t{str(j.model_id)}")
                                    for j in self.tables] for i in self.reservations]
-        
+       
         #table capacity constraints  
         for tab in self.tables:
             self.model.add_constr(
-                mip.xsum(self.assignement_vars[res.model_id][tab.model_id] * res.size for res in self.reservations) <= tab.capacity
+                mip.xsum(self.assignement_vars[res.get_model_id()][tab.get_model_id()] * res.get_size() for res in self.reservations) <= tab.get_capacity()
             )
 
         # Each group at most one table
         for res in self.reservations:
             self.model.add_constr(
-                mip.xsum(self.assignement_vars[res.model_id][tab.model_id] for tab in self.tables) <= 1
+                mip.xsum(self.assignement_vars[res.get_model_id()][tab.get_model_id()] for tab in self.tables) <= 1
             )
 
-        head_reservations = [res for res in self.reservations if res.require_head == True]
+        head_reservations = [res for res in self.reservations if res.get_require_head() == True]
 
 
         #head reservation constraints
         for tab in self.tables:
             self.model.add_constr(
-                mip.xsum(self.assignement_vars[res.model_id][tab.model_id] for res in head_reservations ) <= tab.head_seats
+                mip.xsum(self.assignement_vars[res.get_model_id()][tab.get_model_id()] for res in head_reservations ) <= tab.get_head_seats()
             )
         
         if self.minimize_entropy:
@@ -108,24 +80,25 @@ class Table_problem_optimizer():
             self.full_tables = [self.model.add_var(var_type=mip.BINARY) for i in self.tables]   
             #full tables linking
             for tab in self.tables:
-                self.model.add_constr(self.full_tables[tab.model_id] <=
-                                    1 - (tab.capacity - mip.xsum(self.assignement_vars[res.model_id][tab.model_id] * res.size for res in self.reservations))/tab.capacity)
+                self.model.add_constr(self.full_tables[tab.get_model_id()] <=
+                                    1 - (tab.capacity - mip.xsum(self.assignement_vars[res.get_model_id()][tab.get_model_id()] * res.get_size() for res in self.reservations))/tab.get_capacity())
                 
 
     def add_utility_function(self):
 
         if self.minimize_entropy:
             λ = calculate_lambda_coeff(len(self.tables))
+
             self.model.objective = (
-                    mip.xsum(self.assignement_vars[res.model_id][tab.model_id] * res.size 
+                    mip.xsum(self.assignement_vars[res.get_model_id()][tab.get_model_id()] * res.get_size() 
                             for res in self.reservations 
                             for tab in self.tables) +
-                            λ * mip.xsum(self.full_tables[tab.model_id] for tab in self.tables)
+                            λ * mip.xsum(self.full_tables[tab.get_model_id()] for tab in self.tables)
             )
                 
         else:
             self.model.objective = (
-                    mip.xsum(self.assignement_vars[res.model_id][tab.model_id] * res.size 
+                    mip.xsum(self.assignement_vars[res.get_model_id()][tab.get_model_id()] * res.size 
                             for res in self.reservations 
                             for tab in self.tables) 
             )  
@@ -135,8 +108,8 @@ class Table_problem_optimizer():
             print(f"Number of constraints: {self.model.num_rows}")
             print(f"Number of tables: {len(self.tables)}")
             print(f"Number of reservations: {len(self.reservations)}")
-            print(f"Total capacity: {sum(t.capacity for t in self.tables)}")
-            print(f"Total guests: {sum(r.size for r in self.reservations)}")
+            print(f"Total capacity: {sum(t.get_capacity() for t in self.tables)}")
+            print(f"Total guests: {sum(r.get_size() for r in self.reservations)}")
             print(f"Minimize tables: {self.minimize_entropy}")
     
     def write_sol_to_file(self,path="out.json")->None:
@@ -146,7 +119,7 @@ class Table_problem_optimizer():
 
     #def set_cuts_generator(generator):
     #   self.model.
-
+    #should be moved outside of the class
     def get_solution_json(self)->dict:
         if not self.solution_available:
             return {"error": "no solution"}
@@ -169,8 +142,7 @@ class Table_problem_optimizer():
             "used_tables": used_tab, 
             "total seats": tot_seats,
             "total guests": tot_guests,
-            "total assignable": tot_assigned,
-            "groups": self.grps
+            "total assignable": tot_assigned
             }
     
 if __name__ == "__main__":
