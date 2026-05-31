@@ -5,9 +5,11 @@ import unittest
 import json
 import jsonschema
 from error_types import *
-from solver_utils import Table
+from solver_utils import *
 import os
 import glob
+from mnemonics import *
+
 
 #this file tests the behaivor of the data parser, should be called from the repository root
 
@@ -73,45 +75,145 @@ class DataParserTestCase(unittest.TestCase): #TODO make tests more robust
             size_2329 = 4
             assert any(res.size == size_2326 + size_2328 and res.name == "2326+2328" for res in reservations)
             assert any(res.size == size_2329 and res.name == "2329" for res in reservations)
+    
+    def test_split_reservation(self):
+        print("\nTesting reservation splitting...")
+        res = Reservation({RESERVATION_NAME_ATTR: "test_res", RESERVATION_SIZE_ATTR: 5}, prog_id=0)
+        max_capacity = 3
+        children = res.split(max_capacity)
+        assert len(children) == 2
+        assert children[0].get_size() == 3
+        assert children[1].get_size() == 2
+        assert children[0].get_name() == "test_res-part1"
+        assert children[1].get_name() == "test_res-part2"
+
+    def test_split_reservation_no_split(self):
+        print("\nTesting reservation splitting with no split needed...")
+        res = Reservation({RESERVATION_NAME_ATTR: "test_res", RESERVATION_SIZE_ATTR: 2}, prog_id=0)
+        max_capacity = 3
+        children = res.split(max_capacity)
+        assert len(children) == 1
+        assert children[0].get_size() == 2
+        assert children[0].get_name() == "test_res-part1"
+
+    def test_split_on_aggregate_reservation(self):
+        print("\nTesting splitting on aggregate reservation...")
+        res1 = Reservation({RESERVATION_NAME_ATTR: "res1", RESERVATION_SIZE_ATTR: 2}, prog_id=0)
+        res2 = Reservation({RESERVATION_NAME_ATTR: "res2", RESERVATION_SIZE_ATTR: 3}, prog_id=0)
+        
+        agg_res = Aggregate_reservation([res1, res2], prog_id=0)
+        max_capacity = 4
+        
+        children = agg_res.split(max_capacity)
+        assert len(children) == 2
+        # assert that split divides in the indended way
+        assert any(c.get_size() == 3 for c in children)
+        assert any(c.get_size() == 2 for c in children)
+
+    def test_split_on_aggregate_reservation_no_split(self):
+        print("\nTesting splitting on aggregate reservation with no split needed...")
+        res1 = Reservation({RESERVATION_NAME_ATTR: "res1", RESERVATION_SIZE_ATTR: 2}, prog_id=0)
+        res2 = Reservation({RESERVATION_NAME_ATTR: "res2", RESERVATION_SIZE_ATTR: 1}, prog_id=0)
+        
+        agg_res = Aggregate_reservation([res1, res2], prog_id=0)
+        
+        max_capacity = 4
+        
+        children = agg_res.split(max_capacity)
+        assert len(children) == 1
+        assert children[0].get_size() == 3
+
+    def test_split_aggregate_split_groups(self):
+        print("\nTesting splitting on aggregate reservation with split groups...")
+        res1 = Reservation({RESERVATION_NAME_ATTR: "res1", RESERVATION_SIZE_ATTR: 5}, prog_id=0)
+        res2 = Reservation({RESERVATION_NAME_ATTR: "res2", RESERVATION_SIZE_ATTR: 3}, prog_id=0)
+            
+        agg_res = Aggregate_reservation([res1, res2, ], prog_id=0)
+        
+        max_capacity = 4
+        
+        children = agg_res.split(max_capacity)
+        for child in children:
+            print(child)  #TODO check logic
+       
 
     def test_preassign_close_to_field(self):
         print("\nTesting preassign_close_to_field presolver step...")
         with open("v2\\celeryqueue\\Optimizer\\tests\\close_to_field_test.json","r") as file:
             parser = ILP_data_parser(json.load(file))
             tables = parser.parse_tables()
+            tables_copy = tables.copy() 
+
             reservations = parser.parse_reservations()
             warnings_list = []
-            assignments = {}
-            new_assignments = preassign_close_to_field(tables, reservations, warnings_list)
+            assignments = {"1": [], "2": [], "3": [], "2_1": []} #usually done by Solver_handler
+            preassign_close_to_field(tables, reservations, warnings_list,assignments)
 
-            print(new_assignments)
             assert len(warnings_list) == 0
-            assert len(new_assignments) > 0
+            assert len(assignments) > 0
             for table_id, res_names_list in assignments.items():
-                table = next((t for t in tables if t.get_table_id() == table_id), None)
-                assert table is not None
-                assert table.get_near_field() == True
-                for res_name in res_names_list:
-                    res = next((r for r in reservations if r.get_name() == res_name), None)
-                    assert res is not None
-                    assert res.get_near_field() == True
+                if res_names_list: #only check assigned tables
+                    table_after = next((t for t in tables if t.get_table_id() == table_id), None)
+                    table_before = next((t for t in tables_copy if t.get_table_id() == table_id), None)
+                    assert table_before is not None
+                    assert table_after is not None
+                    assert table_after.get_near_field() == True
+                    assert table_after.get_capacity() <= table_before.get_capacity()
+                    for res_name in res_names_list:
+                        res = next((r for r in reservations if r.get_name() == res_name), None)
+                        assert res is None #is assigned then should be removed from reservation list
+                        
+    def test_get_closest(self):
+        print("\nTesting get_closest function...")
+        with open("v2\\celeryqueue\\Optimizer\\tests\\test_with_gui.json","r") as file:
+            parser = ILP_data_parser(json.load(file))
+            tables = parser.parse_tables()
+            table_1 = next((t for t in tables if t.get_table_id() == "1"), None)
+            closest_to_1 = get_closest(table_1, tables)
+            assert closest_to_1 is not None
+            distance_to_closest = table_distance(table_1, closest_to_1)
 
-    def test_update_current_state(self):
-        print("\nTesting update_current_state method...")
-        with open("v2\\celeryqueue\\Optimizer\\tests\\close_to_field_test.json","r") as file:
-            handler = Solver_handler(json.load(file))
-            num_res = len(handler.current_reservations)
-            new_assignments = {"2": ["1"], "3": ["3"]}
-            handler.update_current_state(new_assignments)
+            for t in tables:
+                if t.get_table_id() != "1":
+                    distance_to_1 = table_distance(table_1, t)
+                    assert distance_to_closest <= distance_to_1
 
-            assert "1" in handler.assigned_res_names
-            assert "3" in handler.assigned_res_names
-            assert len(handler.current_reservations) == num_res - 2
+            
+            assert closest_to_1.get_table_id() == "2" #based on the test json, table 2 is the closest to table 1
+            assert get_closest(next((t for t in tables if t.get_table_id() == "10"), None), tables).get_table_id() == "11" #table 11 is the closest to table 10 based on the test json
+            assert get_closest(next((t for t in tables if t.get_table_id() == "17"), None), tables).get_table_id() == "18" #table 5 or 6 could be closest if horizontal tables are not handled correctly, but 18 is the closest if they are handled correctly
+
+    def test_split_massive(self):
+        print("\nTesting splitting of a massive reservation...")
+        with open("v2\\celeryqueue\\Optimizer\\tests\\test_with_gui.json","r") as file:
+            parser = ILP_data_parser(json.load(file))
+            reservations = parser.parse_reservations()
+            tables = parser.parse_tables()
+            warnings_list = []
+            assignments = {t.get_table_id(): [] for t in tables}
+            capacities = {t.get_table_id(): t.get_capacity() for t in tables}
+            
+            split_massive_reservations(tables, reservations, warnings_list, assignments)
+            
+            new_capacities = {t.get_table_id(): t.get_capacity() for t in tables}
+            assigned_tables = [table_id for table_id, res_list in assignments.items() if res_list]
+            assert len(assigned_tables) > 1
+            for table_id, res_list in assignments.items():
+                if res_list:  # only check tables that got assigned reservations
+                    assert new_capacities[table_id] < capacities[table_id]
+                    
+
+            print(assignments)
 
 
 
 
 
+"""
+------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------- END TESTS ---------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------
+"""
 
 def prettyfy_test_jsons(verbose=False):
     test_dir = "v2\\celeryqueue\\Optimizer\\tests"

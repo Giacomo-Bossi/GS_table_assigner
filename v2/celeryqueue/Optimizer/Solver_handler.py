@@ -87,9 +87,9 @@ class Solver_handler():
         """Runs the solution steps in sequence. Updates itself in between steps.
         """        
         for step in self.presolution_steps:
-            new_assignements = step(self.current_tables, self.current_reservations, self.warnings)
+            step(self.current_tables, self.current_reservations, self.warnings,self.assignments)
 
-            self.update_current_state(new_assignements)
+            #move to steps self.update_current_state(new_assignements)
 
     def get_results(self):
         """Returns the final results after running the solution steps.
