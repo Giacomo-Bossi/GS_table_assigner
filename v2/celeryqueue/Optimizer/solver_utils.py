@@ -7,7 +7,9 @@ class Table():
         self.head_seats = int(int(table.get("head_seats", 0))!=0)
         self.model_id = prog_id
         self.original_dict = table.copy()  #keeping full table description to allow to custom logic to be added in presolver steps
-        self.near_field = table.get(TABLE_NEAR_FIELD_ATTR, False)
+        # "near_field" moved inside a "tags" object: prefer tags[TABLE_NEAR_FIELD_ATTR]
+        tags = table.get("tags") or {}
+        self.near_field = tags.get(TABLE_NEAR_FIELD_ATTR, table.get(TABLE_NEAR_FIELD_ATTR, False))
 
     def get_table_id(self)->str:
         return self.table_id
