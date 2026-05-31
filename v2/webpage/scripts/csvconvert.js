@@ -16,144 +16,16 @@ async function createJob(file) {
     };
 }
 
-const PRESOLVER_PERC_WEIGHT = 50;
 async function jobCall(gruppiData, tavoliData) {
-    // presolver
-    let gruppiAssegnati = [];
-    let assegnamentiManuali = {};
-    try {
-        for (let [idx, tavolo] of tavoliData.entries()) {
-            assegnamentiManuali[""+`${tavolo.table_id}`] = [];
-        }
-
-        const fieldANDheadGroups = tavoliData.some(t => t.tags.near_field && t.head_seats > 0);
-        let gruppiCampo = gruppiData.filter(g => g.near_field);
-        gruppiData = gruppiData.filter(g => !gruppiCampo.includes(g)); // remove near field groups from main array, they will be re-added if not assigned to a near field table
-        for(let gruppo of gruppiCampo) {
-            if(fieldANDheadGroups==false && gruppo.required_head) { // messaggio specifico se ci sono gruppi che richiedono posto capotavola e tavoli vicino al campo, mostrato solo se non esiste neanche un tavolo compatibile (se esiste ma è pieno usa il messaggio generico)
-                console.error("Groups requiring head seat cannot be assigned to near field tables, group that fails check: ", gruppo);
-                throw new Error("Groups requiring head seat cannot be assigned to near field tables, group that fails check: " + gruppo.name);
-            }
-
-            let tavolo = tavoliData.find(t => t.tags.near_field && t.capacity >= gruppo.size && (!gruppo.required_head || t.head_seats));
-            if (tavolo) {
-                assegnamentiManuali[`${tavolo.table_id}`].push(gruppo.name);
-                tavoliData.find(t => t.table_id === tavolo.table_id).capacity -= gruppo.size; // reduce available capacity
-                gruppiAssegnati.push(gruppo);
-
-            } else {
-                console.error("No suitable table (near field) found for group:", gruppo);
-                throw new Error("No suitable table (near field) found for group: " + gruppo.name);
-            }
-        }
-
-
-        let biggestTableCapacity = tavoliData.reduce((maxCap, t) => Math.max(maxCap, t.capacity), 0);
-        let gruppiGrossi = gruppiData.filter(g => g.size > biggestTableCapacity);
-
-        while (gruppiGrossi.length > 0) {
-            console.log("Splitting group:", gruppiGrossi[0]);
-            let giàAssegnatoA = [];
-            let gruppo = gruppiGrossi[0];
-            let gruppiNuovi = [];
-            if (gruppo.required_head) {
-                let biggestHeadTableCapacity = tavoliData.reduce((maxCap, t) => Math.max(maxCap, t.head_seats ? t.capacity : 0), 0);
-                let nuovoGruppoTesta = {
-                    name: gruppo.name + "_head",
-                    show_name: gruppo.show_name,
-                    size: biggestHeadTableCapacity,
-                    required_head: true,
-                    near_field: gruppo.near_field,
-                    close_to: gruppo.close_to
-                };
-                gruppiNuovi.push(nuovoGruppoTesta);
-                gruppo.size -= biggestHeadTableCapacity;
-                gruppo.required_head = false;
-                let tavolo = tavoliData.find(t => t.head_seats && t.capacity >= nuovoGruppoTesta.size);
-                if (tavolo) {
-                    assegnamentiManuali[`${tavolo.table_id}`].push(nuovoGruppoTesta.name);
-                    giàAssegnatoA.push(tavolo.table_id);
-                } else {
-                    console.error("No suitable table found for head group:", nuovoGruppoTesta);
-                    throw new Error("No suitable table found for head group: " + nuovoGruppoTesta.name);
-                }
-                tavoliData.find(t => t.table_id === tavolo.table_id).capacity -= nuovoGruppoTesta.size; // reduce available capacity
-                
-                gruppiAssegnati.push(nuovoGruppoTesta);
-            }
-
-
-            while (gruppo.size > 0) {
-                let sizeToAssign = Math.min(gruppo.size, biggestTableCapacity);
-                if(gruppo.size>=14 && gruppo.size != sizeToAssign && gruppo.size - sizeToAssign < 7) {
-                    sizeToAssign = Math.ceil(gruppo.size / 2);
-                }
-                let nuovoGruppo = {
-                    name: gruppo.name + "_part" + (gruppiNuovi.length + 1),
-                    show_name: gruppo.show_name,
-                    size: sizeToAssign,
-                    required_head: false,
-                    near_field: gruppo.near_field,
-                    close_to: gruppo.close_to
-                };
-                gruppiNuovi.push(nuovoGruppo);
-                gruppo.size -= sizeToAssign;
-                if(giàAssegnatoA.length > 0) {  /* sort tables by distance from the first assigned table for the group 🤯 */
-                    tavoliData.sort((a,b) => {
-                        let ax = a.gui.x + a.gui.width/2;
-                        let ay = a.gui.y + a.gui.height/2;
-                        let bx = b.gui.x + b.gui.width/2;
-                        let by = b.gui.y + b.gui.height/2;
-                        let refTable = tavoliData.find(t => t.table_id === giàAssegnatoA[0]);
-                        let rx = refTable.gui.x + refTable.gui.width/2;
-                        let ry = refTable.gui.y + refTable.gui.height/2;
-                        let da = Math.sqrt((ax - rx)**2 + (ay - ry)**2);
-                        let db = Math.sqrt((bx - rx)**2 + (by - ry)**2);
-                        return da - db;
-                    });
-                }
-                let tavolo = tavoliData.find(t => t.capacity >= nuovoGruppo.size);
-                if (tavolo) {
-                    if (giàAssegnatoA.includes(tavolo.table_id)) {
-                        assegnamentiManuali[`${tavolo.table_id}`].size += nuovoGruppo.size;
-                    }else{
-                        assegnamentiManuali[`${tavolo.table_id}`].push(nuovoGruppo.name);
-                        giàAssegnatoA.push(tavolo.table_id);
-                    }
-                } else {
-                    console.error("No suitable table found for group part:", nuovoGruppo);
-                    throw new Error("No suitable table found for group part: " + nuovoGruppo.name);
-                }
-                tavoliData.find(t => t.table_id === tavolo.table_id).capacity -= nuovoGruppo.size; // reduce available capacity
-                biggestTableCapacity = tavoliData.reduce((maxCap, t) => Math.max(maxCap, t.capacity), 0);
-                gruppiAssegnati.push(nuovoGruppo);
-            }
-            gruppiGrossi = gruppiData.filter(g => g.size > biggestTableCapacity);
-        }
-        console.log("New groups after splitting:", assegnamentiManuali);
-        gruppiData = gruppiData.filter(g => g.size > 0); // remove splitted groups that are now size 0
-        changeProgressBar(PRESOLVER_PERC_WEIGHT);
-    } catch (e) {
-        alert("Error during presolver: " + e.message);
-        window.location.reload();
-        return;
-    }
     // external solver call
     try {
         const payload = JSON.stringify({
                 groups: gruppiData,
-                tables: tavoliData,
-                assignments: assegnamentiManuali,
-                assignments_groups: gruppiAssegnati
-            })
-            
-        const response = await fetch('solver/start_job', { 
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: payload
-        });
+                tables: tavoliData
+            });
+
+        changeProgressBar(5);
+        const response = await postJsonWithProgress('solver/start_job', payload, changeProgressBar);
         const result = await response.json();
         if (!response.ok) {
             alert("Error creating job: " + result.message);
@@ -171,6 +43,55 @@ async function jobCall(gruppiData, tavoliData) {
         return;
     }
 
+}
+
+function postJsonWithProgress(url, payload, onProgress) {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        let lastPercent = -1;
+
+        const report = (percent) => {
+            const clamped = Math.max(0, Math.min(100, percent));
+            if (clamped !== lastPercent) {
+                lastPercent = clamped;
+                onProgress(clamped);
+            }
+        };
+
+        xhr.open('POST', url, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+
+        xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+                report(Math.round((event.loaded / event.total) * 40));
+            }
+        };
+
+        xhr.onprogress = (event) => {
+            if (event.lengthComputable) {
+                report(40 + Math.round((event.loaded / event.total) * 60));
+            }
+        };
+
+        xhr.onload = () => {
+            report(100);
+            resolve({
+                ok: xhr.status >= 200 && xhr.status < 300,
+                status: xhr.status,
+                json: () => Promise.resolve().then(() => {
+                    if (!xhr.responseText) {
+                        return {};
+                    }
+                    return JSON.parse(xhr.responseText);
+                })
+            });
+        };
+
+        xhr.onerror = () => reject(new Error('Network error'));
+
+        xhr.send(payload);
+        report(10);
+    });
 }
 
 
