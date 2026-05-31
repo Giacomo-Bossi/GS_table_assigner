@@ -19,6 +19,20 @@ def get_table_controid(table:Table):
     centroid = (gui_dict.get("x",0)+gui_dict.get("height",0)/2, gui_dict.get("y",0)+gui_dict.get("width",0)/2)
     return centroid
 
+def sanitize_tables(table_list:list[Table]):
+        # remove tables with zero capacity
+        cleaned = []
+        for t in table_list:
+            
+            cap = t.get_capacity()
+            
+            if cap and cap > 0:
+                cleaned.append(t)
+            else:
+                table_list_remove_by_id(table_list, t.get_table_id())
+
+        return cleaned
+
 def table_distance(table1:Table, table2:Table):
     centroid1 = get_table_controid(table1)
     centroid2 = get_table_controid(table2)
@@ -49,7 +63,7 @@ def get_closest(table:Table, table_list:list[Table]):
     return closest_table
 
 def update_state_from_Optimizer_pairings(table_list:list[Table], reservation_list:list[Reservation], warnings_list:list[str],\
-                 assignements:dict[str,list[str]],new_assignments:dict[str,list[str]]):
+                 assignements:dict[str,list[str]],new_assignments:dict[str,list[str]],final_reservations:dict[str,list[object]]):
 
     for table_id, res_list in new_assignments.items():
         for res_name in res_list:
@@ -63,15 +77,17 @@ def update_state_from_Optimizer_pairings(table_list:list[Table], reservation_lis
                 raise ValueError(f"Reservation with name {res_name} not found in reservation list.")
             
             assignements[table_id].append(res_name)
+
             res_list_remove_by_name(reservation_list, res_name)
+            final_reservations["groups:"].append(res.get_dict())
 
             tab.resize(tab.get_capacity() - res.get_size())
             if res.get_require_head():
-                tab.set_head_seat(tab.set_head_seat(False))
+                tab.set_head_seat(False)
             
 
 def preassign_close_to_field(table_list:list[Table], reservation_list:list[Reservation], warnings_list:list[str],\
-                             assignements:dict[str,list[str]]):
+                             assignements:dict[str,list[str]],final_reservations:dict[str,list[object]]):
     """
     presolver step that preassigns reservations with "close_to_field" requirement to tables with "close_to_field" attribute.
     """ 
@@ -105,12 +121,13 @@ def preassign_close_to_field(table_list:list[Table], reservation_list:list[Reser
     solution = Optimizer.get_solution_json()
     new_assignements = solution.get("pairings",{})
     print(new_assignements)
-    update_state_from_Optimizer_pairings(table_list, reservation_list, warnings_list, assignements, new_assignements)
+    update_state_from_Optimizer_pairings(table_list, reservation_list, warnings_list, assignements,\
+                                         new_assignements, final_reservations)
 
     return 
 
 def split_massive_reservations(table_list:list[Table], reservation_list:list[Reservation], warnings_list:list[str],\
-                             assignements:dict[str,list[str]]):
+                             assignements:dict[str,list[str]],final_reservations:dict[str,list[object]]):
     """
     presolver step that splits reservations that are larger than any table capacity into smaller reservations.
     """ 
@@ -152,7 +169,7 @@ def split_massive_reservations(table_list:list[Table], reservation_list:list[Res
             biggest_table.set_head_seat(False)
             
         assignements[biggest_table.get_table_id()].append(new_big_group.get_name())
-
+        final_reservations["groups:"].append(new_big_group.get_dict())
         closest_to_biggest_table = get_closest(biggest_table, table_list)
 
         if closest_to_biggest_table is None:
@@ -173,9 +190,10 @@ def split_massive_reservations(table_list:list[Table], reservation_list:list[Res
         else:
             closest_to_biggest_table.resize(closest_to_biggest_table.get_capacity() - new_small_group.get_size())
             assignements[closest_to_biggest_table.get_table_id()].append(new_small_group.get_name())
+            final_reservations["groups:"].append(new_small_group.get_dict())
 
         res_list_remove_by_name(reservation_list, current_res.get_name())
-        
+
         max_capacity = max(table.get_capacity() for table in table_list)
         max_head_capacity = max(table.get_capacity() for table in table_list if table.get_head_seats() > 0)
         head_tables = [table for table in table_list if table.get_head_seats() > 0]
@@ -185,12 +203,19 @@ def split_massive_reservations(table_list:list[Table], reservation_list:list[Res
     #end while
 
 def run_solver_final(tables:list[Table], reservations:list[Reservation], warnings_list:list[str],\
-                     assignements:dict[str,list[str]]):
+                     assignements:dict[str,list[str]],final_reservations:dict[str,list[object]]):
     """
     runs the solver with the remaining tables and reservations.
     """ 
+    print("\nsolver final")
+    for t in tables:
+        print(t)
+    for r in reservations:
+        print(r)
     Optimizer = Table_problem_optimizer(tables, reservations, minimize_entropy=True)
     Optimizer.solve_problem()
     solution =  Optimizer.get_solution_json()
-    update_state_from_Optimizer_pairings(tables, reservations, warnings_list, assignements, solution.get("pairings",{}))
+
+    update_state_from_Optimizer_pairings(tables, reservations, warnings_list, assignements,\
+                                         solution.get("pairings",{}),final_reservations)
     return
