@@ -5,7 +5,9 @@
       "show_name": "Tavolo",
       "size": 1,
       "required_head": true,
-      "near_field": false,
+      "tags": {
+        "near_field": false
+      },
       "close_to": ""
     },
     {
@@ -13,7 +15,9 @@
       "show_name": "Tavolo3",
       "size": 3,
       "required_head": false,
-      "near_field": false,
+      "tags": {
+        "near_field": false
+      },
       "close_to": "2326"
     },
     {
@@ -21,7 +25,9 @@
       "show_name": "Tavolo4",
       "size": 4,
       "required_head": false,
-      "near_field": false,
+      "tags": {
+        "near_field": false
+      },
       "close_to": ""
     }
   ],

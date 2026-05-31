@@ -7,17 +7,20 @@
     {
       "table_id": 2,
       "capacity": 10,
-      "near_field": true
+      "tags": {
+        "near_field": true
+      }
     },
     {
       "table_id": 3,
       "capacity": 10,
-      "near_field": true
+      "tags": {
+        "near_field": true
+      }
     },
     {
       "table_id": 2,
-      "capacity": 10,
-      "near_field": false
+      "capacity": 10
     }
   ],
   "groups": [
