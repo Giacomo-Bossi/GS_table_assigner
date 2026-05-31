@@ -147,7 +147,8 @@ class DataParserTestCase(unittest.TestCase): #TODO make tests more robust
             reservations = parser.parse_reservations()
             warnings_list = []
             assignments = {"1": [], "2": [], "3": [], "2_1": []} #usually done by Solver_handler
-            preassign_close_to_field(tables, reservations, warnings_list,assignments)
+            final_reservations = {"groups:": []}
+            preassign_close_to_field(tables, reservations, warnings_list,assignments,final_reservations)
 
             assert len(warnings_list) == 0
             assert len(assignments) > 0
@@ -162,7 +163,9 @@ class DataParserTestCase(unittest.TestCase): #TODO make tests more robust
                     for res_name in res_names_list:
                         res = next((r for r in reservations if r.get_name() == res_name), None)
                         assert res is None #is assigned then should be removed from reservation list
-                        
+            print(assignments)
+            print(f"final_reservations: {final_reservations}")       
+
     def test_get_closest(self):
         print("\nTesting get_closest function...")
         with open("v2\\celeryqueue\\Optimizer\\tests\\test_with_gui.json","r") as file:
@@ -192,8 +195,9 @@ class DataParserTestCase(unittest.TestCase): #TODO make tests more robust
             warnings_list = []
             assignments = {t.get_table_id(): [] for t in tables}
             capacities = {t.get_table_id(): t.get_capacity() for t in tables}
+            final_reservations = {"groups:": []}
             
-            split_massive_reservations(tables, reservations, warnings_list, assignments)
+            split_massive_reservations(tables, reservations, warnings_list, assignments,final_reservations)
             
             new_capacities = {t.get_table_id(): t.get_capacity() for t in tables}
             assigned_tables = [table_id for table_id, res_list in assignments.items() if res_list]
@@ -202,10 +206,19 @@ class DataParserTestCase(unittest.TestCase): #TODO make tests more robust
                 if res_list:  # only check tables that got assigned reservations
                     assert new_capacities[table_id] < capacities[table_id]
                     
-
             print(assignments)
+            print(final_reservations)
 
-
+    def test_total(self):
+        print("\nTesting the whole flow with a complex test case...")
+        with open("v2\\celeryqueue\\Optimizer\\tests\\test_with_gui.json","r") as file:
+            data = json.load(file)
+            solver_handler = Solver_handler(data)
+            presolution_steps = [preassign_close_to_field, split_massive_reservations,run_solver_final]
+            solver_handler.configure_presolver(presolution_steps)
+            solver_handler.run_solution_steps()
+            results = solver_handler.get_results()
+            print(json.dumps(results, indent=2))
 
 
 

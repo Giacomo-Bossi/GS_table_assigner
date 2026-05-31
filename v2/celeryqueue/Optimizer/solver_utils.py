@@ -70,6 +70,8 @@ class Reservation():
         return self.model_id
     def get_near_field(self)->bool:
         return self.near_field
+    def get_dict(self)->dict:
+        return {RESERVATION_NAME_ATTR: self.name, RESERVATION_SIZE_ATTR: self.size, RESERVATION_REQUIRE_HEAD_ATTR: self.require_head, RESERVATION_NEAR_FIELD_ATTR: self.near_field}
     def set_model_id(self,new_id:int):
         self.model_id = new_id
     def set_require_head(self,require_head:bool):
@@ -117,7 +119,7 @@ class Aggregate_reservation(Reservation):
         self.name = "+".join([res.get_name() for res in reservations])
         self.size = sum([res.size for res in reservations])
         self.require_head = any([res.require_head for res in reservations]) 
-        #self.original_dict = reservations.copy() #TODO think
+        self.original_dicts = reservations.copy()
         if warnings_list is not None:
             head_count = sum(1 for res in reservations if res.get_require_head())
             if head_count > 1:
