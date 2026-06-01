@@ -53,9 +53,9 @@ class Solver_handler():
         total_seats = sum(t.get_capacity() for t in self.tables)
         total_guests = sum(r.get_size() for r in self.reservations)
         total_assignable = sum(
-            r.get_size()
-            for r in self.reservations
-            if r.get_name() in self.assigned_res_names
+            r["size"]
+            for r in self.final_reservations
+            if r["name"] in [name for names in self.assignments.values() for name in names]
         )
 
         return {
