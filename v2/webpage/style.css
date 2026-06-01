@@ -449,8 +449,19 @@ td.ok {
     animation: rotateCog 3s infinite linear;
 }
 
+.warnJob {
+    color: #ffcc00;
+}
+
+
 .failJob {
     color: #ff4d4d;
+}
+
+.jobRow td:nth-child(4) {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
 }
 
 #tableBody button {
