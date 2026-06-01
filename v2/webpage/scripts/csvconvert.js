@@ -63,13 +63,13 @@ function postJsonWithProgress(url, payload, onProgress) {
 
         xhr.upload.onprogress = (event) => {
             if (event.lengthComputable) {
-                report(Math.round((event.loaded / event.total) * 40));
+                report(Math.round((event.loaded / event.total) * 80));
             }
         };
 
         xhr.onprogress = (event) => {
             if (event.lengthComputable) {
-                report(40 + Math.round((event.loaded / event.total) * 60));
+                report(80 + Math.round((event.loaded / event.total) * 20));
             }
         };
 
