@@ -16,7 +16,14 @@ function fetchJobStatus() {
             document.getElementById("jobProgressText").textContent = data.status;
             if (data.status === "COMPLETED") {
                 clearInterval(updater);
-                document.getElementById("jobStatusText").textContent = "Completato!";
+                const assignedAll = data.result && data.result["total assignable"] ==  data.result["total guests"];
+                const hasWarnings = data.result && data.result["warnings"] && data.result["warnings"].length > 0;
+                if(hasWarnings){
+                    document.getElementById("jobStatusText").textContent = "Completato con avvisi!";
+                    document.getElementById("jobStatusText").classList.add("warnJob");
+                }else {
+                    document.getElementById("jobStatusText").textContent = "Completato!";
+                }
                 document.querySelector(".loader-job").remove();
                 document.querySelectorAll(".lo_sp").forEach(el => el.remove());
                 let result = data.result;
@@ -45,6 +52,16 @@ function fetchJobStatus() {
                 area.appendChild(document.createElement("br"));
                 area.appendChild(buttonsContainer);
                 
+                if(hasWarnings){
+                    let warningsTable = $('<table class="warningTable"></table>');
+                    warningsTable.append('<thead><tr><th><h2>Elenco avvisi:</h2></th></tr></thead>');
+                    let warningsBody = $('<tbody></tbody>');
+                    data.result.warnings.forEach(warning => {
+                        warningsBody.append(`<tr><td>${warning}</td></tr>`);
+                    });
+                    warningsTable.append(warningsBody);
+                    $(area).append(warningsTable);
+                }
 
             } else if (data.status === "PROCESSING") {
 
