@@ -1,5 +1,5 @@
-from solver_utils import Table, Reservation
-from Table_problem_optimizer import Table_problem_optimizer, calculate_lambda_coeff
+from Optimizer.solver_utils import Table, Reservation
+from Optimizer.Table_problem_optimizer import Table_problem_optimizer, calculate_lambda_coeff
 
 NEAR_FIELD_ATTR = "near_field"
 def res_list_remove_by_name(reservation_list:list[Reservation], name:str):
@@ -79,7 +79,7 @@ def update_state_from_Optimizer_pairings(table_list:list[Table], reservation_lis
             assignements[table_id].append(res_name)
 
             res_list_remove_by_name(reservation_list, res_name)
-            final_reservations["groups:"].append(res.get_dict())
+            final_reservations.append(res.get_dict())
 
             tab.resize(tab.get_capacity() - res.get_size())
             if res.get_require_head():
@@ -169,7 +169,7 @@ def split_massive_reservations(table_list:list[Table], reservation_list:list[Res
             biggest_table.set_head_seat(False)
             
         assignements[biggest_table.get_table_id()].append(new_big_group.get_name())
-        final_reservations["groups:"].append(new_big_group.get_dict())
+        final_reservations.append(new_big_group.get_dict())
         closest_to_biggest_table = get_closest(biggest_table, table_list)
 
         if closest_to_biggest_table is None:
@@ -190,7 +190,7 @@ def split_massive_reservations(table_list:list[Table], reservation_list:list[Res
         else:
             closest_to_biggest_table.resize(closest_to_biggest_table.get_capacity() - new_small_group.get_size())
             assignements[closest_to_biggest_table.get_table_id()].append(new_small_group.get_name())
-            final_reservations["groups:"].append(new_small_group.get_dict())
+            final_reservations.append(new_small_group.get_dict())
 
         res_list_remove_by_name(reservation_list, current_res.get_name())
 

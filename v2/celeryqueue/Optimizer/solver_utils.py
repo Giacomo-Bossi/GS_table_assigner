@@ -1,4 +1,4 @@
-from mnemonics import *
+from Optimizer.mnemonics import *
 
 class Table():
     def __init__(self,table:dict,prog_id:int=0):
@@ -62,6 +62,7 @@ class Reservation():
             self.model_id = prog_id
             self.original_dict = reservation.copy() #keeping full reservation description to allow to custom logic to be added in presolver steps
             self.near_field = reservation.get(RESERVATION_NEAR_FIELD_ATTR, False)
+            self.show_name = reservation.get(RESERVATION_SHOW_NAME_ATTR, self.name)
     def get_name(self)->str:
         return self.name
     def get_size(self)->int:
@@ -73,7 +74,13 @@ class Reservation():
     def get_near_field(self)->bool:
         return self.near_field
     def get_dict(self)->dict:
-        return {RESERVATION_NAME_ATTR: self.name, RESERVATION_SIZE_ATTR: self.size, RESERVATION_REQUIRE_HEAD_ATTR: self.require_head, RESERVATION_NEAR_FIELD_ATTR: self.near_field}
+        return {
+            RESERVATION_NAME_ATTR: self.name,
+            RESERVATION_SHOW_NAME_ATTR: self.show_name, 
+            RESERVATION_SIZE_ATTR: self.size, 
+            RESERVATION_REQUIRE_HEAD_ATTR: self.require_head, 
+            RESERVATION_NEAR_FIELD_ATTR: self.near_field
+        }
     def set_model_id(self,new_id:int):
         self.model_id = new_id
     def set_require_head(self,require_head:bool):
@@ -129,6 +136,7 @@ class Aggregate_reservation(Reservation):
                                       only one will be honored.")
         self.near_field = any([res.get_near_field() for res in reservations])
         self.model_id = prog_id
+        self.reservation_dicts = [res.get_dict() for res in reservations]
 
     #@override
     def split(self, max_capacity:int): #TODO check
@@ -182,6 +190,17 @@ class Aggregate_reservation(Reservation):
                 result.append(agg)
 
         return result
+    
+
+    #@override
+    def get_dict(self)->dict:
+        return {
+            RESERVATION_NAME_ATTR: self.name,
+            RESERVATION_SIZE_ATTR: self.size, 
+            RESERVATION_REQUIRE_HEAD_ATTR: self.require_head, 
+            RESERVATION_NEAR_FIELD_ATTR: self.near_field,
+            AGGREGATE_RESERVATIONS_SUB_LIST_ATTR: self.reservation_dicts
+        }
         
 
 class Prog_id_gen():

@@ -1,9 +1,9 @@
 import jsonschema
 import json
 from typing import TypeVar, List, Set
-from solver_utils import Table, Reservation,Aggregate_reservation, Prog_id_gen
-from error_types import *
-from mnemonics import *
+from Optimizer.solver_utils import Table, Reservation,Aggregate_reservation, Prog_id_gen
+from Optimizer.error_types import *
+from Optimizer.mnemonics import *
 T = TypeVar('T')
 
 
@@ -174,7 +174,7 @@ class ILP_data_parser():
             ------
         jsonschema.exceptions.ValidationError    if the input data does not conform to the schema.
         """
-        with open('v2\\celeryqueue\\Optimizer\\schemas\\input_schema.json', 'r') as f:
+        with open('Optimizer/schemas/input_schema.json', 'r') as f:
             schema = json.load(f)
         try:
             jsonschema.validate(instance=self.data, schema=schema)

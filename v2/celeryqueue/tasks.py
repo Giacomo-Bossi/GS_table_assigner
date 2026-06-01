@@ -2,7 +2,8 @@ from celery import Celery
 from celery.utils.log import get_task_logger
 import mip
 import time
-import Optimizer.Table_problem_optimizer as Opt
+from Optimizer.presolution_steps import *
+from Optimizer.Solver_handler import Solver_handler
 
 # NOTA: host='redis' punta al docker "redis"
 celery_app = Celery('tasks', 
@@ -42,23 +43,11 @@ class CeleryUpdater():
     
 @celery_app.task(bind=True)
 def run_mip_task(self, data:dict):
-    self.unhandled_groups = data.get("assignments_groups", [])
-    self.unhandled_assignments = data.get("assignments", {})
-    self.incumbent_offset = sum(group["size"] for group in self.unhandled_groups)
 
-    optim = Opt.Table_problem_optimizer(data,minimize_entropy=False)
-    optim.model.cuts_generator = CeleryUpdater(optim.model, self, [g["size"] for g in data["groups"]])
-    optim.solve_problem()
-    json = optim.get_solution_json()
-    json["groups"].extend(self.unhandled_groups)
-    for table_id, assigned_groups in self.unhandled_assignments.items():
-        if table_id not in json["pairings"]:
-            json["pairings"][table_id] = []
-            json["used_tables"]+= 1
-        json["pairings"][table_id][:0] = assigned_groups
-    json["total assignable"]+= self.incumbent_offset
-    json["total seats"]+= self.incumbent_offset
-    json["total guests"]+= self.incumbent_offset
+    solver_handler = Solver_handler(data)
+    solver_handler.configure_presolver([preassign_close_to_field, split_massive_reservations,run_solver_final])
+    solver_handler.run_solution_steps()
+    json = solver_handler.get_results()
 
-
+    #optim.model.cuts_generator = CeleryUpdater(optim.model, self, [g["size"] for g in data["groups"]]) ## solver implementation changed, deprecated old method
     return json

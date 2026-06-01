@@ -2,7 +2,7 @@ import json
 import mip
 import time
 from mip import OptimizationStatus
-from solver_utils import Table, Reservation, Prog_id_gen #TODO adapt to moved imports
+from Optimizer.solver_utils import Table, Reservation, Prog_id_gen
 
 def calculate_lambda_coeff(num_tables : int)->float:
         """

@@ -1,9 +1,9 @@
-from data_parser import ILP_data_parser
-from error_types import *
+from Optimizer.data_parser import ILP_data_parser
+from Optimizer.error_types import *
 import jsonschema
 from typing import Callable
-from solver_utils import Table, Reservation
-from  presolution_steps import sanitize_tables
+from Optimizer.solver_utils import Table, Reservation
+from Optimizer.presolution_steps import sanitize_tables
 
 class Solver_handler():
     def __init__(self,data):
@@ -15,9 +15,9 @@ class Solver_handler():
         try:
             self.parser = ILP_data_parser(self.data)
         except Invalid_schema_error as e:
-            pass #TODO handle
+            raise e
         except Invalid_data_error as e:
-            pass 
+            raise e
 
         self.tables = self.parser.parse_tables()
         self.reservations = self.parser.parse_reservations()
@@ -26,7 +26,7 @@ class Solver_handler():
         self.assigned_res_names = set() 
         self.assignments = {} #dict of table_id to list of reservation names, used to keep track of assignements thorugh steps
         self.assignments = {t.get_table_id(): [] for t in self.tables}
-        self.final_reservations = {"groups:": []}
+        self.final_reservations = []
 
         self.presolution_steps = []
                     
