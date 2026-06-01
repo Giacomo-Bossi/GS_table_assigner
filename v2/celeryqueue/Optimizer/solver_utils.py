@@ -1,5 +1,48 @@
 from Optimizer.mnemonics import *
 
+
+def _normalize_capacities(capacities) -> list[int]:
+    if isinstance(capacities, int):
+        capacities = [capacities]
+    return [int(c) for c in capacities if int(c) > 0]
+
+
+def _compute_split_sizes(total_size: int, capacities) -> list[int]:
+    capacities = _normalize_capacities(capacities)
+    if not capacities or total_size <= 0:
+        return []
+
+    sizes: list[int] = []
+    used_caps: list[int] = []
+    remaining = int(total_size)
+    idx = 0
+    while remaining > 0:
+        cap = capacities[idx] if idx < len(capacities) else capacities[-1]
+        if cap <= 0:
+            break
+        take = cap if remaining > cap else remaining
+        sizes.append(take)
+        used_caps.append(cap)
+        remaining -= take
+        idx += 1
+
+    if len(sizes) >= 2 and sizes[-1] < 6:
+        total_last_two = sizes[-2] + sizes[-1]
+        prev_cap = used_caps[-2]
+        last_cap = used_caps[-1]
+        min_last = max(1, total_last_two - prev_cap)
+        max_last = min(last_cap, total_last_two - 1)
+        if min_last <= max_last:
+            target_last = (total_last_two + 1) // 2
+            if target_last < min_last:
+                target_last = min_last
+            elif target_last > max_last:
+                target_last = max_last
+            sizes[-1] = target_last
+            sizes[-2] = total_last_two - target_last
+
+    return sizes
+
 class Table():
     def __init__(self,table:dict,prog_id:int=0):
         self.table_id = str(table[TABLE_ID_ATTR])
@@ -100,11 +143,16 @@ class Reservation():
             f"near_field={self.near_field}, model_id={self.model_id})"
         )
     
-    def split(self,max_capacity:int):
+    def split(self,capacities:list[int])->list['Reservation']:
         """
-        Defines how to split a reservation if it cannot be assigned to a single table.
-        """ 
-        sizes = (max_capacity,self.size - max_capacity) if self.size > max_capacity else (self.size,)
+        Split a reservation into parts using the provided capacities in order.
+        If the last part is smaller than 6, rebalance it with the previous part
+        while respecting both capacities.
+        """
+        capacities = _normalize_capacities(capacities)
+        sizes = _compute_split_sizes(self.size, capacities)
+        if not sizes:
+            return []
 
         childrens: list[Reservation] = []
         for i, s in enumerate(sizes, start=1):
@@ -136,51 +184,88 @@ class Aggregate_reservation(Reservation):
                                       only one will be honored.")
         self.near_field = any([res.get_near_field() for res in reservations])
         self.model_id = prog_id
+        self.show_name = "+".join([res.show_name for res in reservations])
         self.reservation_dicts = [res.get_dict() for res in reservations]
 
     #@override
-    def split(self, max_capacity:int): #TODO check
+    def split(self, capacities): #TODO check
         """
-        Defines how to split an aggregate reservation into parts that fit within
-        max_capacity. Behavior:
-        - If aggregate contains a single Reservation, delegate to that Reservation.split(max_capacity).
-        - Otherwise, try to pack reservations into subsets (greedy first-fit) so that
-          each subset total size <= max_capacity. Reservations larger than max_capacity
-          are split using their own split method.
-        Returns a list of Reservation or Aggregate_reservation instances.
+        Split an aggregate reservation using the provided capacities in order.
+        Sub-reservations are only split when necessary to hit the target sizes.
         """
-        if len(self.reservations) == 0:
+        capacities = _normalize_capacities(capacities)
+        if not capacities or len(self.reservations) == 0:
             return []
 
-        # If single child, delegate
         if len(self.reservations) == 1:
             child = self.reservations[0]
-            return child.split(max_capacity)
+            return child.split(capacities)
 
-        # Prepare list of reservations to pack, splitting oversized ones first
-        to_pack: list[Reservation] = []
-        for res in self.reservations:
-            if res.get_size() > max_capacity:
-                # split oversized reservation into parts
-                parts = res.split(max_capacity)
-                to_pack.extend(parts)
-            else:
-                to_pack.append(res)
+        target_sizes = _compute_split_sizes(self.size, capacities)
+        if not target_sizes:
+            return []
+
+        def split_reservation_by_sizes(res: Reservation, sizes: list[int]) -> list[Reservation]:
+            parts: list[Reservation] = []
+            for i, s in enumerate(sizes, start=1):
+                new_dict = res.original_dict.copy()
+                new_dict[RESERVATION_SIZE_ATTR] = s
+                new_dict[RESERVATION_REQUIRE_HEAD_ATTR] = res.get_require_head() if i == 1 else 0
+                try:
+                    base_name = str(new_dict.get(RESERVATION_NAME_ATTR, res.get_name()))
+                except Exception:
+                    base_name = res.get_name()
+                new_dict[RESERVATION_NAME_ATTR] = f"{base_name}-part{i}"
+                parts.append(Reservation(new_dict, prog_id=res.get_model_id()))
+            return parts
 
         groups: list[list[Reservation]] = []
-        # Greedy first-fit packing into groups
-        for res in to_pack:
-            placed = False
-            for grp in groups:
-                if sum(r.get_size() for r in grp) + res.get_size() <= max_capacity:
-                    grp.append(res)
-                    placed = True
-                    break
-            if not placed:
-                groups.append([res])
+        current_group: list[Reservation] = []
+        current_size = 0
+        target_idx = 0
 
-        # Convert groups to Aggregate_reservation when group contains >1 reservation,
-        # otherwise return the single Reservation
+        for res in self.reservations:
+            item = res
+            while True:
+                if target_idx >= len(target_sizes):
+                    if current_group:
+                        current_group.append(item)
+                        groups.append(current_group)
+                    else:
+                        groups.append([item])
+                    current_group = []
+                    current_size = 0
+                    break
+
+                target = target_sizes[target_idx]
+                remaining = target - current_size
+                if remaining <= 0:
+                    if current_group:
+                        groups.append(current_group)
+                    current_group = []
+                    current_size = 0
+                    target_idx += 1
+                    continue
+
+                if item.get_size() <= remaining:
+                    current_group.append(item)
+                    current_size += item.get_size()
+                    break
+
+                first_size = remaining
+                rest_size = item.get_size() - remaining
+                parts = split_reservation_by_sizes(item, [first_size, rest_size])
+                current_group.append(parts[0])
+                current_size += parts[0].get_size()
+                groups.append(current_group)
+                current_group = []
+                current_size = 0
+                target_idx += 1
+                item = parts[1]
+
+        if current_group:
+            groups.append(current_group)
+
         result: list[Reservation] = []
         for grp in groups:
             if len(grp) == 1:

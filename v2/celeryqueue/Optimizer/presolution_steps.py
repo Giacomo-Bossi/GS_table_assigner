@@ -102,8 +102,8 @@ def preassign_close_to_field(table_list:list[Table], reservation_list:list[Reser
         sum(1 for tab in field_tables if tab.get_head_seats() > 0):
          #not enough haed seats to satisfy the requirement
         warnings_list.append(f"{len(groups_to_preassign)} reservations require {NEAR_FIELD_ATTR} and head seats,\
-                              but not enough tables with {NEAR_FIELD_ATTR} have head seats.\
-                              Ignoring {NEAR_FIELD_ATTR} requirement for these reservations.")
+ but not enough tables with {NEAR_FIELD_ATTR} have head seats.\
+ Ignoring {NEAR_FIELD_ATTR} requirement for these reservations.")
         
         for res in groups_to_preassign:
             if res.get_near_field():
@@ -152,7 +152,7 @@ def split_massive_reservations(table_list:list[Table], reservation_list:list[Res
 
         if not new_groups:
             res_list_remove_by_name(reservation_list, current_res.get_name()) #won't be assigned ever since it can't fit neither split
-            warnings_list.append(f"Failed to split reservation {current_res.get_name()} with size {current_res.get_size()}. Ignoring it completely.")
+            warnings_list.append(f"Failed to split reservation {current_res.show_name}({current_res.get_name()}) with size {current_res.get_size()}. Ignoring it completely.")
             continue
             
         if current_res.get_require_head():
@@ -160,9 +160,9 @@ def split_massive_reservations(table_list:list[Table], reservation_list:list[Res
         else:
             biggest_table = max(table_list, key=lambda table: table.get_capacity())
 
-        new_big_group = max(new_groups, key=lambda res: res.get_size())
-        new_small_group = min(new_groups, key=lambda res: res.get_size())
+        new_groups_sorted = sorted(new_groups, key=lambda res: res.get_size(), reverse=True)
 
+        new_big_group = new_groups_sorted.pop(0)
         biggest_table.resize(biggest_table.get_capacity() - new_big_group.get_size())
 
         if current_res.get_require_head(): #TODO fix hidden assumption that biggest group inherits head
@@ -170,27 +170,37 @@ def split_massive_reservations(table_list:list[Table], reservation_list:list[Res
             
         assignements[biggest_table.get_table_id()].append(new_big_group.get_name())
         final_reservations.append(new_big_group.get_dict())
-        closest_to_biggest_table = get_closest(biggest_table, table_list)
 
-        if closest_to_biggest_table is None:
-            warnings_list.append(f"Failed to find a closest table to {biggest_table.get_table_id()} for split reservation\
-                                  {new_small_group.get_name()}. Assigning it to any table with enough capacity.")
-            closest_to_biggest_table = next((tab for tab in table_list if tab.get_capacity() >= new_small_group.get_size()), None)
+        last_table = biggest_table
+        pending_groups = []
+        for split_group in new_groups_sorted:
+            closest = get_closest(last_table, table_list)
 
-            if closest_to_biggest_table is None:
-                raise ValueError(f"No table with enough capacity to assign split reservation {new_small_group.get_name()}\
-                                  with size {new_small_group.get_size()}.")
+            if closest is None:
+                warnings_list.append(f"Failed to find a closest table to {last_table.get_table_id()} for split reservation\
+  {split_group.show_name}({split_group.get_name()}). Assigning it to any table with enough capacity.")
+                closest = next((tab for tab in table_list if tab.get_capacity() >= split_group.get_size()), None)
 
-        if closest_to_biggest_table.get_capacity() < new_small_group.get_size():
-            reservation_list.extend(new_groups)
-            warnings_list.append(f"Failed to assign split reservation {new_small_group.get_name()} with size {new_small_group.get_size()}\
-                                  to closest table {closest_to_biggest_table.get_table_id()} with capacity {closest_to_biggest_table.get_capacity()}.\
-                                  Will be put somewhere else.")
+            if closest is None:
+                pending_groups.append(split_group)
+                warnings_list.append(f"No table with enough capacity to assign split reservation {split_group.show_name}({split_group.get_name()})\
+ with size {split_group.get_size()}. Will be put somewhere else.")
+                continue
 
-        else:
-            closest_to_biggest_table.resize(closest_to_biggest_table.get_capacity() - new_small_group.get_size())
-            assignements[closest_to_biggest_table.get_table_id()].append(new_small_group.get_name())
-            final_reservations.append(new_small_group.get_dict())
+            if closest.get_capacity() < split_group.get_size():
+                pending_groups.append(split_group)
+                warnings_list.append(f"Failed to assign split reservation {split_group.show_name}({split_group.get_name()}) with size {split_group.get_size()}\
+  to closest table {closest.get_table_id()} with capacity {closest.get_capacity()}.\
+  Will be put somewhere else.")
+                continue
+
+            closest.resize(closest.get_capacity() - split_group.get_size())
+            assignements[closest.get_table_id()].append(split_group.get_name())
+            final_reservations.append(split_group.get_dict())
+            last_table = closest
+
+        if pending_groups:
+            reservation_list.extend(pending_groups)
 
         res_list_remove_by_name(reservation_list, current_res.get_name())
 
