@@ -66,6 +66,47 @@ def table_segmentation(table:dict, head_lateral_seats_offset:int=9, head_other_s
     return segmenti
 
 
+def expand_aggregated_group(group: dict) -> list[dict]:
+    aggregated = group.get("aggregated_reservations")
+    if not isinstance(aggregated, list) or len(aggregated) == 0:
+        return [{
+            **group,
+            "show_name": str(group.get("show_name", group.get("name", ""))),
+            "_agg_parent": group.get("name"),
+        }]
+
+    expanded = []
+    for sub in aggregated:
+        if not isinstance(sub, dict):
+            continue
+        name = str(sub.get("name", group.get("name", "")))
+        show_name = str(sub.get("show_name", name))
+        expanded.append({
+            "name": name,
+            "show_name": show_name,
+            "size": sub.get("size", 0),
+            "real_size": sub.get("real_size", sub.get("size", 0)),
+            "required_head": sub.get("required_head", 0),
+            "near_field": sub.get("near_field", False),
+            "_agg_parent": group.get("name"),
+        })
+
+    if not expanded:
+        return [{
+            **group,
+            "show_name": str(group.get("show_name", group.get("name", ""))),
+            "_agg_parent": group.get("name"),
+        }]
+
+    head_idx = next((i for i, g in enumerate(expanded) if g.get("required_head")), None)
+    if head_idx is not None:
+        for i, g in enumerate(expanded):
+            if i != head_idx and g.get("required_head"):
+                g["required_head"] = 0
+
+    return expanded
+
+
 class EventInfo:
     def __init__(self, eventln1: str, eventln2: str, eventln3: str, date: str) -> None:
         self.eventln1 = eventln1
@@ -151,19 +192,26 @@ def generaMappa(
     #end header
 
     labls = [] # Elenco di etichette per i tavoli (testo + coordinate + sfondo) vanno stampate alla fine per non essere coperte dai tavoli
-    
+
+    groups = result.get("groups", [])
+    groups_by_name = {g.get("name"): g for g in groups if g.get("name") is not None}
+    render_groups = []
+    for group in groups:
+        render_groups.extend(expand_aggregated_group(group))
+
     color = getNewColor()
     split_colors = {} # pregeneriamo i colori per i gruppi splittati
     split_tot_size = {}
-    for gruppo in result["groups"]:
-        if "_part" in gruppo["name"]:
-            idgp = gruppo["name"].split("_part")[0]
+    for gruppo in render_groups:
+        name = gruppo.get("name", "")
+        if "-part" in name:
+            idgp = name.split("-part")[0]
             if idgp not in split_colors:
                 color = getNewColor(color)
                 split_colors[idgp] = color
             if idgp not in split_tot_size:
                 split_tot_size[idgp] = 0
-            split_tot_size[idgp] += gruppo["size"]
+            split_tot_size[idgp] += gruppo.get("real_size", gruppo.get("size", 0))
             
     
 
@@ -239,14 +287,26 @@ def generaMappa(
                 pdf.text(x=x + height_t + 5, y=y + width_t - labLen, text=str(table['table_id']))
 
 
-            gruppi = result["groups"]
-            associazioni = result["pairings"]
-            gruppiTavolo = [gruppo for gruppo in gruppi if gruppo["name"] in associazioni[str(table["table_id"])]]
+            associazioni = result.get("pairings", {})
+            assigned_names = associazioni.get(str(table["table_id"]), [])
+            gruppiTavolo = []
+            for gname in assigned_names:
+                group = groups_by_name.get(gname)
+                if not group:
+                    continue
+                expanded = expand_aggregated_group(group)
+                for sub in expanded:
+                    sub["_agg_order"] = len(gruppiTavolo)
+                gruppiTavolo.extend(expanded)
             gruppi_testa = [gruppo for gruppo in gruppiTavolo if gruppo.get('required_head',0)]
+            for gt in gruppi_testa:
+                if gt.get('size', 0) % 2 == 0:
+                    gt['size'] += 1
+                    
             gruppi_normali = [gruppo for gruppo in gruppiTavolo if not gruppo.get('required_head',0)]
             #gruppi_normali.sort(key=lambda g: g['size']%2==1)
         
-            if sum([gr["required_head"] for gr in gruppi_testa]) > table["head_seats"] or len(gruppi_testa) > 1:  #per ora max 1 testa
+            if sum(gr.get("required_head", 0) for gr in gruppi_testa) > table["head_seats"] or len(gruppi_testa) > 1:  #per ora max 1 testa
                 print("Tavolo", table["table_id"], " - In testa:", gruppi_testa)
                 raise ValueError("Troppi posti in testa richiesti")
             
@@ -255,53 +315,90 @@ def generaMappa(
 
             seg = table_segmentation(table, head_lateral_seats_offset, head_other_seats_offset, seats_stride)
 
+            if not gruppi_testa:
+                seg.sort(key=lambda s: -s.x)
             
             
             pdf.set_font("Arial", size=12)
             pdf.set_text_color(0, 0, 0)
             
             for gruppo_testa in gruppi_testa:
-                if("_part" in gruppo_testa["name"]):
-                    color = split_colors[gruppo_testa["name"].split("_part")[0]]
+                gruppo_name = gruppo_testa.get("name", "")
+                gruppo_show = gruppo_testa.get("show_name", gruppo_name)
+                gruppo_size = gruppo_testa.get("size", 0)
+                gruppo_real_size = gruppo_testa.get("real_size", gruppo_size)
+                if("-part" in gruppo_name):
+                    color = split_colors[gruppo_name.split("-part")[0]]
                 else:
                     color = getNewColor(color)
                 pdf.set_fill_color(*color)
-                for i in range(gruppo_testa["size"]):
+                for i in range(gruppo_size):
                     spot = seg.pop(0)
-                    pdf.rect(x=spot.x,y=spot.y,w=spot.w,h=spot.h,style="F")
-                if("_part" not in gruppo_testa["name"]):
-                    labls.append( (f"{gruppo_testa['show_name']}({gruppo_testa['size']})", x + 10 , y + width_t/2, color, 262, horizontal, x, y) )
+                    if i < gruppo_real_size:
+                        pdf.rect(x=spot.x,y=spot.y,w=spot.w,h=spot.h,style="F")
+                if("-part" not in gruppo_name):
+                    labls.append( (f"{gruppo_show}({gruppo_real_size})", x + 10 , y + width_t/2, color, 262, horizontal, x, y) )
                 else:
-                    idgp = gruppo_testa["name"].split("_part")[0]
-                    tot_size = split_tot_size.get(idgp, gruppo_testa["size"])
-                    labls.append( (f"{gruppo_testa['show_name']}({gruppo_testa['size']}/{tot_size})", x + 10 , y + width_t/2, color, 262, horizontal, x, y) )
+                    idgp = gruppo_name.split("-part")[0]
+                    tot_size = split_tot_size.get(idgp, gruppo_real_size)
+                    labls.append( (f"{gruppo_show}({gruppo_real_size}/{tot_size})", x + 10 , y + width_t/2, color, 262, horizontal, x, y) )
                     
 
-            while len(gruppi_normali) >0 and len(seg) >0:
-                candidates = [g for g in gruppi_normali if g['size'] <= len(seg)]
-                if not candidates:
+            agg_parent_has_head = {g.get("_agg_parent", g.get("name", "")) for g in gruppi_testa}
+            parent_order = {gname: idx for idx, gname in enumerate(assigned_names)}
+
+            blocks = []
+            for gruppo in gruppi_normali:
+                parent = gruppo.get("_agg_parent", gruppo.get("name", ""))
+                if not blocks or blocks[-1][0].get("_agg_parent") != parent:
+                    blocks.append([gruppo])
+                else:
+                    blocks[-1].append(gruppo)
+
+            blocks.sort(
+                key=lambda block: (
+                    0 if block[0].get("_agg_parent", block[0].get("name", "")) in agg_parent_has_head else 1,
+                    parent_order.get(block[0].get("_agg_parent", block[0].get("name", "")), 10**9),
+                )
+            )
+
+            for block in blocks:
+                if not seg:
                     break
-                gruppo = next((g for g in candidates if (g['size'] % 2) == (len(seg) % 2)), candidates[0])
-                gruppi_normali.remove(gruppo)
-                if("_part" in gruppo["name"]):
-                    color = split_colors[gruppo["name"].split("_part")[0]]
-                else:
-                    color = getNewColor(color)
-                pdf.set_fill_color(*color)
-                lowest, highest = 999999, 0
-                for i in range(gruppo["size"]):
-                    spot = seg.pop(0)
-                    pdf.rect(x=spot.x,y=spot.y,w=spot.w,h=spot.h,style="F")
-                    if spot.x < lowest:
-                        lowest = spot.x
-                    if spot.x+spot.h > highest:
-                        highest = spot.x + spot.h
-                if "_part" not in gruppo["name"]:
-                    labls.append( (f"{gruppo['show_name']}({gruppo['size']})", (lowest + highest)/2 , y + width_t/2, color, degrees(atan2(-width_t, lowest-highest)), horizontal, x, y) )
-                else:
-                    idgp = gruppo["name"].split("_part")[0]
-                    tot_size = split_tot_size.get(idgp, gruppo["size"])
-                    labls.append( (f"{gruppo['show_name']}({gruppo['size']}/{tot_size})", (lowest + highest)/2 , y + width_t/2, color, degrees(atan2(-width_t, lowest-highest)), horizontal, x, y) )
+                block_size = sum(g.get("size", 0) for g in block)
+                if block_size > len(seg):
+                    continue
+
+                for gruppo in block:
+                    if not seg:
+                        break
+                    gruppo_name = gruppo.get("name", "")
+                    gruppo_show = gruppo.get("show_name", gruppo_name)
+                    gruppo_size = gruppo.get("size", 0)
+                    gruppo_real_size = gruppo.get("real_size", gruppo_size)
+                    if("-part" in gruppo_name):
+                        color = split_colors[gruppo_name.split("-part")[0]]
+                    else:
+                        color = getNewColor(color)
+                    pdf.set_fill_color(*color)
+                    lowest, highest = 999999, 0
+                    for i in range(gruppo_size):
+                        spot = seg.pop(0)
+                        if i < gruppo_real_size:
+                            pdf.rect(x=spot.x,y=spot.y,w=spot.w,h=spot.h,style="F")
+                            if spot.x < lowest:
+                                lowest = spot.x
+                            if spot.x+spot.h > highest:
+                                highest = spot.x + spot.h
+                    # # Fallback if no seats were drawn (e.g. real_size was 0)
+                    # if lowest == 999999:
+                    #     lowest = highest = spot.x if 'spot' in locals() else x
+                    if "-part" not in gruppo_name:
+                        labls.append( (f"{gruppo_show}({gruppo_real_size})", (lowest + highest)/2 , y + width_t/2, color, degrees(atan2(-width_t, lowest-highest)), horizontal, x, y) )
+                    else:
+                        idgp = gruppo_name.split("-part")[0]
+                        tot_size = split_tot_size.get(idgp, gruppo_real_size)
+                        labls.append( (f"{gruppo_show}({gruppo_real_size}/{tot_size})", (lowest + highest)/2 , y + width_t/2, color, degrees(atan2(-width_t, lowest-highest)), horizontal, x, y) )
                 
             pdf.rect(x=x, y=y, w=height_t, h=width_t, style='D') #table border
 
@@ -365,23 +462,28 @@ def generaMappa(
     elenco_pdf.set_draw_color(0, 0, 0)
 
     # Build alphabetical list: reservation name -> table number
-    groups_by_name = {g["name"]: g for g in result.get("groups", [])}
     entries = []
     for table_id, group_names in result.get("pairings", {}).items():
         for gname in group_names:
             group = groups_by_name.get(gname)
             if not group:
                 continue
-            if "_part" not in group["name"]:
-                display_name = group.get("show_name", gname)
-                display_name = f"{display_name} ({group.get('size', '')})".rstrip()
-                entries.append((display_name, str(table_id)))
-            else:
-                idgp = group["name"].split("_part")[0]
-                tot_size = sum([gr["size"] for gr in result.get("groups", []) if gr["name"].startswith(idgp+"_part")])
-                display_name = group.get("show_name", gname)
-                display_name = f"{display_name} ({group.get('size', '')}/{tot_size})".rstrip()
-                entries.append((display_name, str(table_id)))
+            for display_group in expand_aggregated_group(group):
+                display_name = display_group.get("show_name", display_group.get("name", gname))
+                display_size = display_group.get("real_size", display_group.get("size", ""))
+                display_group_name = display_group.get("name", gname)
+                if "-part" not in display_group_name:
+                    display_name = f"{display_name} ({display_size})".rstrip()
+                    entries.append((display_name, str(table_id)))
+                else:
+                    idgp = display_group_name.split("-part")[0]
+                    tot_size = sum(
+                        gr.get("real_size", gr.get("size", 0))
+                        for gr in render_groups
+                        if gr.get("name", "").startswith(idgp + "-part")
+                    )
+                    display_name = f"{display_name} ({display_size}/{tot_size})".rstrip()
+                    entries.append((display_name, str(table_id)))
     entries.sort(key=lambda x: x[0].lower())
 
     elenco_pdf.set_font("verdana", size=9)

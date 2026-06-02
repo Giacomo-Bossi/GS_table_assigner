@@ -8,9 +8,11 @@
     <title>GS - Task status</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/fonts/remixicon.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
 <body>
+    <button id="newSimBtn" onclick="window.location.href='index.html'">Nuova Simulazione <i class="ri-add-circle-line"></i></button>
     <div>
         <div class="drag-area" >
             <svg class="border-overlay" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
@@ -26,7 +28,6 @@
             <p id="jobProgressText" ><!-- 0/556 posti assegnati --></p>
         </div>
     </div>
-    <button id="simListBtn" onclick="document.location.href='index.html';" >Nuova simulazione</button>
     
     <script src="scripts/dashedborder.js"></script>
     <script src="scripts/job.js"></script>

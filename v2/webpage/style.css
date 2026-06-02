@@ -24,7 +24,7 @@ p{
 }
 
 .drag-area {
-    height: 400px;
+    min-height: 400px;
     width: 700px;
     border-radius: 15px;
     display: flex;
@@ -34,6 +34,7 @@ p{
     transition: all 0.5s;
     animation: linearGradientMove .7s infinite linear;
     animation-play-state: paused;
+    padding: 2em;
 }
 
 .drag-area.active {
@@ -157,8 +158,9 @@ button:disabled {
     }
 
     .drag-area {
-        height: 400px;
+        min-height: 400px;
         width: 450px;
+        top: 3em;
     }
     
 
@@ -428,6 +430,28 @@ svg.circle {
     background-color: #009185;
 }
 
+.warningTable {
+    border: 2px solid #ffcc00;
+    border-radius: 10px;
+    color: #ffcc00;
+    width: fit-content;
+    height: fit-content;
+    margin-top: 20px;
+    box-shadow: 4px 4px 10px -1px rgba(0, 0, 0, 0.2),
+        -0.5px -0.5px 0px rgba(0, 0, 0, 0.15);
+}
+.warningTable th {
+    background-color: rgba(128, 119, 0, 0.658);
+}
+.warningTable tr:nth-child(even) {
+    background-color: rgba(255, 204, 0, 0.2);
+}
+
+.warningTable th, .warningTable td {
+    padding: 10px 15px;
+    text-align: center;
+}
+
 td.err {
     color: #850000;
     font-weight: bolder;
@@ -449,8 +473,19 @@ td.ok {
     animation: rotateCog 3s infinite linear;
 }
 
+.warnJob {
+    color: #ffcc00 !important;
+}
+
+
 .failJob {
-    color: #ff4d4d;
+    color: #ff4d4d !important;
+}
+
+.jobRow td:nth-child(4) {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
 }
 
 #tableBody button {

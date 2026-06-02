@@ -1,0 +1,47 @@
+{
+  "tables": [
+    {
+      "table_id": 1,
+      "capacity": 10
+    },
+    {
+      "table_id": 2,
+      "capacity": 10,
+      "tags": {
+        "near_field": true
+      }
+    },
+    {
+      "table_id": 3,
+      "capacity": 10,
+      "tags": {
+        "near_field": true
+      }
+    },
+    {
+      "table_id": 2,
+      "capacity": 10
+    }
+  ],
+  "groups": [
+    {
+      "name": 1,
+      "size": 5,
+      "near_field": true
+    },
+    {
+      "name": 2,
+      "size": 6
+    },
+    {
+      "name": 3,
+      "size": 6,
+      "near_field": true
+    },
+    {
+      "name": 3,
+      "size": 6,
+      "near_field": false
+    }
+  ]
+}

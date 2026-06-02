@@ -1,0 +1,12 @@
+{
+  "tablets": [
+    {
+      "table_id": 1,
+      "capacity": 12
+    },
+    {
+      "table_id": 2,
+      "capacity": 13
+    }
+  ]
+}
