@@ -88,7 +88,7 @@ def download_placeholders(task_id):
     prenotazioni = [(g.get("show_name", "Ospite " + str(i)), g.get("size", 1)) for i, g in enumerate(gruppi)]
 
     data = generaSegnaposti(prenotazioni, event)
-    return Response(data, mimetype='application/pdf', headers={"Content-Disposition": "attachment;filename=segnaposti_{}.pdf".format(task_id)})
+    return Response(data, mimetype='application/pdf')#, headers={"Content-Disposition": "attachment;filename=segnaposti_{}.pdf".format(task_id)})
 
 @app.errorhandler(404)
 def page_not_found(e):

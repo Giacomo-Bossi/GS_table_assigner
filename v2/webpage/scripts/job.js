@@ -36,13 +36,13 @@ function fetchJobStatus() {
                 let dlPlaceholdersBtn = document.createElement("button");
                 dlPlaceholdersBtn.innerHTML = `<i class="ri-file-paper-2-fill"></i>`;
                 dlPlaceholdersBtn.onclick = function () {
-                    window.location.href = `solver/download/${job_id}/placeholders`;
+                    window.open(`solver/download/${job_id}/placeholders`, '_blank');
                 };
 
                 let dlMapBtn = document.createElement("button");
                 dlMapBtn.innerHTML = `<i class="ri-treasure-map-line"></i>`;
                 dlMapBtn.onclick = function () {
-                    window.location.href = `solver/download/${job_id}/map`;
+                    window.open(`solver/download/${job_id}/map`, '_blank');
                 };
 
                 let buttonsContainer = document.createElement("div");
