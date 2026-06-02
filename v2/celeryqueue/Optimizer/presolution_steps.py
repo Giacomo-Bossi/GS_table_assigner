@@ -171,6 +171,16 @@ def split_massive_reservations(table_list:list[Table], reservation_list:list[Res
         new_groups_sorted = sorted(new_groups, key=lambda res: res.get_size(), reverse=True)
 
         new_big_group = new_groups_sorted.pop(0)
+
+        if (new_big_group.get_size() % 2 != 0 and not new_big_group.get_require_head()) or \
+           (new_big_group.get_size() % 2 == 0 and new_big_group.get_require_head()):
+            if biggest_table.get_capacity() >= new_big_group.get_size() + 1:
+                if isinstance(new_big_group, Aggregate_reservation):
+                    new_big_group.size += 1
+                    new_big_group.reservations[-1].size += 1
+                else:
+                    new_big_group.size += 1
+
         biggest_table.resize(biggest_table.get_capacity() - new_big_group.get_size())
 
         if current_res.get_require_head(): #TODO fix hidden assumption that biggest group inherits head
@@ -201,6 +211,15 @@ def split_massive_reservations(table_list:list[Table], reservation_list:list[Res
   to closest table {closest.get_table_id()} with capacity {closest.get_capacity()}.\
   Will be put somewhere else.")
                 continue
+
+            if (split_group.get_size() % 2 != 0 and not split_group.get_require_head()) or \
+               (split_group.get_size() % 2 == 0 and split_group.get_require_head()):
+                if closest.get_capacity() >= split_group.get_size() + 1:
+                    if isinstance(split_group, Aggregate_reservation):
+                        split_group.size += 1
+                        split_group.reservations[-1].size += 1
+                    else:
+                        split_group.size += 1
 
             closest.resize(closest.get_capacity() - split_group.get_size())
             assignements[closest.get_table_id()].append(split_group.get_name())
