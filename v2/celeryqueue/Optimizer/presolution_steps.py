@@ -52,6 +52,8 @@ def get_closest(table:Table, table_list:list[Table]):
     min_distance = float("inf")
     closest_table = None
     for tab in table_list:
+        if tab.get_capacity() == 0: 
+            continue
         if tab.get_table_id() != table.get_table_id():
             tab_centroid = get_table_controid(tab)
 
