@@ -101,6 +101,7 @@ class Reservation():
     def __init__(self,reservation:dict,prog_id:int=0,warnings_list:list[str]=None):
             self.name = str(reservation[RESERVATION_NAME_ATTR])
             self.size = reservation[RESERVATION_SIZE_ATTR]
+            self.real_size = reservation[RESERVATION_REAL_SIZE_ATTR]
             self.require_head = reservation.get(RESERVATION_REQUIRE_HEAD_ATTR,0)
             self.model_id = prog_id
             self.original_dict = reservation.copy() #keeping full reservation description to allow to custom logic to be added in presolver steps
@@ -121,6 +122,7 @@ class Reservation():
             RESERVATION_NAME_ATTR: self.name,
             RESERVATION_SHOW_NAME_ATTR: self.show_name, 
             RESERVATION_SIZE_ATTR: self.size, 
+            RESERVATION_REAL_SIZE_ATTR: self.real_size, 
             RESERVATION_REQUIRE_HEAD_ATTR: self.require_head, 
             RESERVATION_NEAR_FIELD_ATTR: self.near_field
         }
@@ -130,6 +132,8 @@ class Reservation():
         self.require_head = require_head
     def set_near_field(self,near_field:bool):
         self.near_field = near_field
+    def set_size(self,new_size:int):
+        self.size = new_size
 
     def print_info(self):
         print(
@@ -185,7 +189,6 @@ class Aggregate_reservation(Reservation):
         self.near_field = any([res.get_near_field() for res in reservations])
         self.model_id = prog_id
         self.show_name = "+".join([res.show_name for res in reservations])
-        self.reservation_dicts = [res.get_dict() for res in reservations]
 
     #@override
     def split(self, capacities): #TODO check
@@ -284,9 +287,14 @@ class Aggregate_reservation(Reservation):
             RESERVATION_SIZE_ATTR: self.size, 
             RESERVATION_REQUIRE_HEAD_ATTR: self.require_head, 
             RESERVATION_NEAR_FIELD_ATTR: self.near_field,
-            AGGREGATE_RESERVATIONS_SUB_LIST_ATTR: self.reservation_dicts
+            AGGREGATE_RESERVATIONS_SUB_LIST_ATTR: [res.get_dict() for res in self.reservations]
         }
         
+    def __str__(self):
+        return (
+            f"Aggregate_reservation(name={self.name}, size={self.size}, require_head={self.require_head}, "
+            f"near_field={self.near_field}, model_id={self.model_id})"
+        )
 
 class Prog_id_gen():
     def __init__(self):

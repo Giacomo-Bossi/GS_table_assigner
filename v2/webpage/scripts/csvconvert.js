@@ -20,9 +20,9 @@ async function jobCall(gruppiData, tavoliData) {
     // external solver call
     try {
         const payload = JSON.stringify({
-                groups: gruppiData,
-                tables: tavoliData
-            });
+            groups: gruppiData,
+            tables: tavoliData
+        });
 
         changeProgressBar(5);
         const response = await postJsonWithProgress('solver/start_job', payload, changeProgressBar);
@@ -124,14 +124,21 @@ function generateGruppiJSON(csvString) {
             continue; // Skip invalid row
         }
 
-        data.push({
+        let groupObj = {
             name: values[0], // id del gruppo (unico)
             show_name: values[2], // nome visualizzato
             size: parseInt(values[3], 10), // dimensione del gruppo
+            real_size: parseInt(values[3], 10), // dimensione del gruppo, da non toccare nel solver (usata per display)
             required_head: values[5].toLowerCase() === 'vero' || values[5].toLowerCase() === 'true', // il gruppo richiede un posto capotavola
             near_field: values.length > 7 && (values[7].toLowerCase() === 'vero' || values[7].toLowerCase() === 'true'), // il gruppo richiede un posto vicino al campo
-            close_to: values.length > 6 ? values[6] : null  // [FUTURE] for future use, richiesto vicino a (id di un altro gruppo) 
-        });
+        };
+
+        if (values.length > 6 && values[6].trim() !== "") {
+            let closeToValue = values[6].trim();
+            // Handle multiple IDs if necessary, or just string
+            groupObj.close_to = closeToValue;
+        }
+        data.push(groupObj);
     }
     console.log("Parsed groups data:", data);
     return data;

@@ -85,6 +85,7 @@ def expand_aggregated_group(group: dict) -> list[dict]:
             "name": name,
             "show_name": show_name,
             "size": sub.get("size", 0),
+            "real_size": sub.get("real_size", sub.get("size", 0)),
             "required_head": sub.get("required_head", 0),
             "near_field": sub.get("near_field", False),
             "_agg_parent": group.get("name"),
@@ -210,7 +211,7 @@ def generaMappa(
                 split_colors[idgp] = color
             if idgp not in split_tot_size:
                 split_tot_size[idgp] = 0
-            split_tot_size[idgp] += gruppo.get("size", 0)
+            split_tot_size[idgp] += gruppo.get("real_size", gruppo.get("size", 0))
             
     
 
@@ -298,6 +299,10 @@ def generaMappa(
                     sub["_agg_order"] = len(gruppiTavolo)
                 gruppiTavolo.extend(expanded)
             gruppi_testa = [gruppo for gruppo in gruppiTavolo if gruppo.get('required_head',0)]
+            for gt in gruppi_testa:
+                if gt.get('size', 0) % 2 == 0:
+                    gt['size'] += 1
+                    
             gruppi_normali = [gruppo for gruppo in gruppiTavolo if not gruppo.get('required_head',0)]
             #gruppi_normali.sort(key=lambda g: g['size']%2==1)
         
@@ -310,6 +315,8 @@ def generaMappa(
 
             seg = table_segmentation(table, head_lateral_seats_offset, head_other_seats_offset, seats_stride)
 
+            if not gruppi_testa:
+                seg.sort(key=lambda s: -s.x)
             
             
             pdf.set_font("Arial", size=12)
@@ -319,6 +326,7 @@ def generaMappa(
                 gruppo_name = gruppo_testa.get("name", "")
                 gruppo_show = gruppo_testa.get("show_name", gruppo_name)
                 gruppo_size = gruppo_testa.get("size", 0)
+                gruppo_real_size = gruppo_testa.get("real_size", gruppo_size)
                 if("-part" in gruppo_name):
                     color = split_colors[gruppo_name.split("-part")[0]]
                 else:
@@ -326,13 +334,14 @@ def generaMappa(
                 pdf.set_fill_color(*color)
                 for i in range(gruppo_size):
                     spot = seg.pop(0)
-                    pdf.rect(x=spot.x,y=spot.y,w=spot.w,h=spot.h,style="F")
+                    if i < gruppo_real_size:
+                        pdf.rect(x=spot.x,y=spot.y,w=spot.w,h=spot.h,style="F")
                 if("-part" not in gruppo_name):
-                    labls.append( (f"{gruppo_show}({gruppo_size})", x + 10 , y + width_t/2, color, 262, horizontal, x, y) )
+                    labls.append( (f"{gruppo_show}({gruppo_real_size})", x + 10 , y + width_t/2, color, 262, horizontal, x, y) )
                 else:
                     idgp = gruppo_name.split("-part")[0]
-                    tot_size = split_tot_size.get(idgp, gruppo_size)
-                    labls.append( (f"{gruppo_show}({gruppo_size}/{tot_size})", x + 10 , y + width_t/2, color, 262, horizontal, x, y) )
+                    tot_size = split_tot_size.get(idgp, gruppo_real_size)
+                    labls.append( (f"{gruppo_show}({gruppo_real_size}/{tot_size})", x + 10 , y + width_t/2, color, 262, horizontal, x, y) )
                     
 
             agg_parent_has_head = {g.get("_agg_parent", g.get("name", "")) for g in gruppi_testa}
@@ -366,6 +375,7 @@ def generaMappa(
                     gruppo_name = gruppo.get("name", "")
                     gruppo_show = gruppo.get("show_name", gruppo_name)
                     gruppo_size = gruppo.get("size", 0)
+                    gruppo_real_size = gruppo.get("real_size", gruppo_size)
                     if("-part" in gruppo_name):
                         color = split_colors[gruppo_name.split("-part")[0]]
                     else:
@@ -374,17 +384,21 @@ def generaMappa(
                     lowest, highest = 999999, 0
                     for i in range(gruppo_size):
                         spot = seg.pop(0)
-                        pdf.rect(x=spot.x,y=spot.y,w=spot.w,h=spot.h,style="F")
-                        if spot.x < lowest:
-                            lowest = spot.x
-                        if spot.x+spot.h > highest:
-                            highest = spot.x + spot.h
+                        if i < gruppo_real_size:
+                            pdf.rect(x=spot.x,y=spot.y,w=spot.w,h=spot.h,style="F")
+                            if spot.x < lowest:
+                                lowest = spot.x
+                            if spot.x+spot.h > highest:
+                                highest = spot.x + spot.h
+                    # # Fallback if no seats were drawn (e.g. real_size was 0)
+                    # if lowest == 999999:
+                    #     lowest = highest = spot.x if 'spot' in locals() else x
                     if "-part" not in gruppo_name:
-                        labls.append( (f"{gruppo_show}({gruppo_size})", (lowest + highest)/2 , y + width_t/2, color, degrees(atan2(-width_t, lowest-highest)), horizontal, x, y) )
+                        labls.append( (f"{gruppo_show}({gruppo_real_size})", (lowest + highest)/2 , y + width_t/2, color, degrees(atan2(-width_t, lowest-highest)), horizontal, x, y) )
                     else:
                         idgp = gruppo_name.split("-part")[0]
-                        tot_size = split_tot_size.get(idgp, gruppo_size)
-                        labls.append( (f"{gruppo_show}({gruppo_size}/{tot_size})", (lowest + highest)/2 , y + width_t/2, color, degrees(atan2(-width_t, lowest-highest)), horizontal, x, y) )
+                        tot_size = split_tot_size.get(idgp, gruppo_real_size)
+                        labls.append( (f"{gruppo_show}({gruppo_real_size}/{tot_size})", (lowest + highest)/2 , y + width_t/2, color, degrees(atan2(-width_t, lowest-highest)), horizontal, x, y) )
                 
             pdf.rect(x=x, y=y, w=height_t, h=width_t, style='D') #table border
 
@@ -456,7 +470,7 @@ def generaMappa(
                 continue
             for display_group in expand_aggregated_group(group):
                 display_name = display_group.get("show_name", display_group.get("name", gname))
-                display_size = display_group.get("size", "")
+                display_size = display_group.get("real_size", display_group.get("size", ""))
                 display_group_name = display_group.get("name", gname)
                 if "-part" not in display_group_name:
                     display_name = f"{display_name} ({display_size})".rstrip()
@@ -464,7 +478,7 @@ def generaMappa(
                 else:
                     idgp = display_group_name.split("-part")[0]
                     tot_size = sum(
-                        gr.get("size", 0)
+                        gr.get("real_size", gr.get("size", 0))
                         for gr in render_groups
                         if gr.get("name", "").startswith(idgp + "-part")
                     )
