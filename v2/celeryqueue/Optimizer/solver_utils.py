@@ -111,6 +111,8 @@ class Reservation():
         return self.name
     def get_size(self)->int:
         return self.size
+    def get_real_size(self)->int:
+        return self.real_size
     def get_require_head(self)->bool:
         return self.require_head
     def get_model_id(self)->int:
@@ -154,14 +156,16 @@ class Reservation():
         while respecting both capacities.
         """
         capacities = _normalize_capacities(capacities)
-        sizes = _compute_split_sizes(self.size, capacities)
+        sizes = _compute_split_sizes(self.real_size, capacities)
+        deltasize = self.real_size - self.size
         if not sizes:
             return []
 
         childrens: list[Reservation] = []
         for i, s in enumerate(sizes, start=1):
             new_dict = self.original_dict.copy()
-            new_dict[RESERVATION_SIZE_ATTR] = s
+            new_dict[RESERVATION_SIZE_ATTR] = s + (deltasize if i==len(sizes) else 0) # if size and real_size differ, the diff is added to the last part (keeps total size and real size equal to the original group)
+            new_dict[RESERVATION_REAL_SIZE_ATTR] = s
             new_dict[RESERVATION_REQUIRE_HEAD_ATTR] = self.require_head if i == 1 else 0
             
             try:
@@ -179,6 +183,7 @@ class Aggregate_reservation(Reservation):
         self.reservations = reservations.copy()
         self.name = "+".join([res.get_name() for res in reservations])
         self.size = sum([res.size for res in reservations])
+        self.real_size = sum([res.get_real_size() for res in self.reservations])
         self.require_head = any([res.require_head for res in reservations]) 
         self.original_dicts = reservations.copy()
         if warnings_list is not None:
@@ -213,6 +218,7 @@ class Aggregate_reservation(Reservation):
             for i, s in enumerate(sizes, start=1):
                 new_dict = res.original_dict.copy()
                 new_dict[RESERVATION_SIZE_ATTR] = s
+                new_dict[RESERVATION_REAL_SIZE_ATTR] = s
                 new_dict[RESERVATION_REQUIRE_HEAD_ATTR] = res.get_require_head() if i == 1 else 0
                 try:
                     base_name = str(new_dict.get(RESERVATION_NAME_ATTR, res.get_name()))
@@ -279,12 +285,16 @@ class Aggregate_reservation(Reservation):
 
         return result
     
+    #@override
+    def get_real_size(self)->int:
+        return sum([res.get_real_size() for res in self.reservations])
 
     #@override
     def get_dict(self)->dict:
         return {
             RESERVATION_NAME_ATTR: self.name,
             RESERVATION_SIZE_ATTR: self.size, 
+            RESERVATION_REAL_SIZE_ATTR: self.real_size,
             RESERVATION_REQUIRE_HEAD_ATTR: self.require_head, 
             RESERVATION_NEAR_FIELD_ATTR: self.near_field,
             AGGREGATE_RESERVATIONS_SUB_LIST_ATTR: [res.get_dict() for res in self.reservations]

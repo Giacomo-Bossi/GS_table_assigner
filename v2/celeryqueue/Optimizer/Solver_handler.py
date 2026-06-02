@@ -28,6 +28,8 @@ class Solver_handler():
         self.assignments = {t.get_table_id(): [] for t in self.tables}
         self.final_reservations = []
 
+        self.total_seats = sum(t.get_capacity() for t in self.tables)
+
         self.presolution_steps = []
                     
     def configure_presolver(self,presolution_steps:list[Callable]):
@@ -50,10 +52,10 @@ class Solver_handler():
         """Returns the final results after running the solution steps.
         """
         used_tab = sum(1 for assign in self.assignments.values() if len(assign) > 0)
-        total_seats = sum(t.get_capacity() for t in self.tables)
-        total_guests = sum(r.get_size() for r in self.reservations)
+        
+        total_guests = sum(r.get_real_size() for r in self.reservations)
         total_assignable = sum(
-            r["size"]
+            r["real_size"]
             for r in self.final_reservations
             if r["name"] in [name for names in self.assignments.values() for name in names]
         )
@@ -61,7 +63,7 @@ class Solver_handler():
         return {
             "pairings": self.assignments,
             "used_tables": used_tab,
-            "total seats": total_seats,
+            "total seats": self.total_seats,
             "total guests": total_guests,
             "total assignable": total_assignable,
             "warnings": self.warnings,
