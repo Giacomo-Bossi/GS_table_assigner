@@ -1,4 +1,4 @@
-from Optimizer.solver_utils import Table, Reservation
+from Optimizer.solver_utils import Table, Reservation, Aggregate_reservation
 from Optimizer.Table_problem_optimizer import Table_problem_optimizer, calculate_lambda_coeff
 
 NEAR_FIELD_ATTR = "near_field"
@@ -93,6 +93,14 @@ def preassign_close_to_field(table_list:list[Table], reservation_list:list[Reser
     """ 
     groups_to_preassign = [res for res in reservation_list if res.get_near_field()]
     field_tables = [table for table in table_list if table.get_near_field()]
+
+    for res in groups_to_preassign:
+        if res.get_size() % 2 != 0:
+            if isinstance(res, Aggregate_reservation):
+                res.size += 1
+                res.reservations[-1].size += 1   
+            else:
+                res.size += 1
 
     if len(field_tables) == 0 and len(groups_to_preassign) > 0: 
         warnings_list.append(f"{len(groups_to_preassign)} reservations require {NEAR_FIELD_ATTR} but no tables have this attribute. Ignoring it")
@@ -212,6 +220,94 @@ def split_massive_reservations(table_list:list[Table], reservation_list:list[Res
     
     #end while
 
+def temporary_group_balancing(table_list:list[Table], reservation_list:list[Reservation], warnings_list:list[str],\
+                 assignements:dict[str,list[str]],final_reservations:dict[str,list[object]]):
+    """
+    UNUSED AND COMPLETLY BROKEN - DO NOT USE!
+
+    temporary presolver step: tries to assign groups and modify reservations to force the final solver to avoid groups in front of eachother
+    The head seats are: first assigned to groups that require head seats, then to groups with odd sizes. After that the remaining odd groups are made even (and in case head seats are more they are removed) 
+    """ 
+
+    head_groups = [res for res in reservation_list if res.get_require_head()]
+    #sort head_groups by size descending
+    head_groups.sort(key=lambda res: res.get_size(), reverse=True)
+    for res in head_groups:
+        if res.get_size() % 2 != 0:
+            if isinstance(res, Aggregate_reservation):
+                res.size += 1
+                res.reservations[-1].size += 1   
+            else:
+                res.size += 1
+
+    head_tables = [table for table in table_list if table.get_head_seats() > 0]
+    #sort tables by capacity ascending, to make the table that fits the group best
+    head_tables.sort(key=lambda table: table.get_capacity(), reverse=False)
+
+    #first assign head seats to groups that require head seats
+    for res in head_groups:
+        if res.get_require_head():
+            for table in head_tables:
+                if table.get_capacity() >= res.get_size():
+                    assignements[table.get_table_id()].append(res.get_name())
+                    final_reservations.append(res.get_dict())
+                    table.resize(table.get_capacity() - res.get_size())
+                    table.set_head_seat(False)
+                    head_tables.remove(table)
+                    head_groups.remove(res)
+                    res_list_remove_by_name(reservation_list, res.get_name())
+                    break
+
+    if(len(head_groups)>0):
+        warnings_list.append(f"Failed to assign {len(head_groups)} head groups. The head position will not be granted.")
+    
+    #next assign odd groups to remaining head tables
+    odd_groups = [res for res in reservation_list if res.get_size() % 2 != 0] 
+    #sort odd_groups by size descending
+    odd_groups.sort(key=lambda res: res.get_size(), reverse=True)
+    #sort tables by capacity ascending, to make the table that fits the group best
+    head_tables.sort(key=lambda table: table.get_capacity(), reverse=False)
+    for res in odd_groups:
+        for table in head_tables:
+            if table.get_capacity() >= res.get_size():
+                res.set_require_head(True)
+                assignements[table.get_table_id()].append(res.get_name())
+                final_reservations.append(res.get_dict())
+                table.resize(table.get_capacity() - res.get_size())
+                table.set_head_seat(False)
+                head_tables.remove(table)
+                odd_groups.remove(res)
+                res_list_remove_by_name(reservation_list, res.get_name())
+                break
+    
+    
+
+    #now normalize everything to be even
+    for res in reservation_list:
+        if res.get_size() % 2 != 0:
+            if isinstance(res, Aggregate_reservation):
+                res.size += 1
+                res.reservations[-1].size += 1   
+            else:
+                res.size += 1
+            
+    
+    
+def test_all_even(tables:list[Table], reservations:list[Reservation], warnings_list:list[str],\
+                     assignements:dict[str,list[str]],final_reservations:dict[str,list[object]]):
+    
+    for res in reservations:
+        if res.get_size() % 2 != 0:
+            if isinstance(res, Aggregate_reservation):
+                res.size += 1
+                res.reservations[-1].size += 1   
+            else:
+                res.size += 1
+
+    
+
+
+
 def run_solver_final(tables:list[Table], reservations:list[Reservation], warnings_list:list[str],\
                      assignements:dict[str,list[str]],final_reservations:dict[str,list[object]]):
     """
@@ -222,7 +318,7 @@ def run_solver_final(tables:list[Table], reservations:list[Reservation], warning
         print(t)
     for r in reservations:
         print(r)
-    Optimizer = Table_problem_optimizer(tables, reservations, minimize_entropy=True)
+    Optimizer = Table_problem_optimizer(tables, reservations, minimize_entropy=False)
     Optimizer.solve_problem()
     solution =  Optimizer.get_solution_json()
 

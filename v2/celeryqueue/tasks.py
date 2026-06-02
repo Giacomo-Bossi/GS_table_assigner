@@ -45,7 +45,7 @@ class CeleryUpdater():
 def run_mip_task(self, data:dict):
 
     solver_handler = Solver_handler(data)
-    solver_handler.configure_presolver([preassign_close_to_field, split_massive_reservations,run_solver_final])
+    solver_handler.configure_presolver([preassign_close_to_field, split_massive_reservations, test_all_even, run_solver_final])
     solver_handler.run_solution_steps()
     json = solver_handler.get_results()
 
