@@ -3,7 +3,7 @@ const UPDATE_INTERVAL = 2000; // in milliseconds
 
 let updater = setInterval(fetchJobStatus, UPDATE_INTERVAL);
 
-window.onload = function() {
+window.onload = function () {
     fetchJobStatus();
 };
 
@@ -16,29 +16,32 @@ function fetchJobStatus() {
             document.getElementById("jobProgressText").textContent = data.status;
             if (data.status === "COMPLETED") {
                 clearInterval(updater);
-                const assignedAll = data.result && data.result["total assignable"] ==  data.result["total guests"];
+                const assignedAll = data.result && data.result["total assignable"] == data.result["total guests"];
                 const hasWarnings = data.result && data.result["warnings"] && data.result["warnings"].length > 0;
-                if(hasWarnings){
+                if (hasWarnings) {
                     document.getElementById("jobStatusText").textContent = "Completato con avvisi!";
                     document.getElementById("jobStatusText").classList.add("warnJob");
-                }else {
+                } else {
                     document.getElementById("jobStatusText").textContent = "Completato!";
                 }
                 document.querySelector(".loader-job").remove();
                 document.querySelectorAll(".lo_sp").forEach(el => el.remove());
                 let result = data.result;
-                document.getElementById("jobProgressText").textContent = `Assegnati: ${result["total assignable"]} / ${result["total guests"]} (${result["total seats"]} posti)`;
+                document.getElementById("jobProgressText").innerHTML = `Assegnati: <span class="seatNumLabel">${result["total assignable"]} / ${result["total guests"]}</span> (${result["total seats"]} posti)`;
+                if (result["total assignable"] < result["total guests"]) {
+                    $(".seatNumLabel").css("color", "darkred");
+                }
                 let area = document.querySelector(".drag-area");
 
                 let dlPlaceholdersBtn = document.createElement("button");
                 dlPlaceholdersBtn.innerHTML = `<i class="ri-file-paper-2-fill"></i>`;
-                dlPlaceholdersBtn.onclick = function() {
+                dlPlaceholdersBtn.onclick = function () {
                     window.location.href = `solver/download/${job_id}/placeholders`;
                 };
 
                 let dlMapBtn = document.createElement("button");
                 dlMapBtn.innerHTML = `<i class="ri-treasure-map-line"></i>`;
-                dlMapBtn.onclick = function() {
+                dlMapBtn.onclick = function () {
                     window.location.href = `solver/download/${job_id}/map`;
                 };
 
@@ -51,8 +54,8 @@ function fetchJobStatus() {
 
                 area.appendChild(document.createElement("br"));
                 area.appendChild(buttonsContainer);
-                
-                if(hasWarnings){
+
+                if (hasWarnings) {
                     let warningsTable = $('<table class="warningTable"></table>');
                     warningsTable.append('<thead><tr><th><h2>Elenco avvisi:</h2></th></tr></thead>');
                     let warningsBody = $('<tbody></tbody>');
