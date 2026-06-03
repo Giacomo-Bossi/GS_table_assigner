@@ -127,8 +127,8 @@ function generateGruppiJSON(csvString) {
         let groupObj = {
             name: values[0], // id del gruppo (unico)
             show_name: values[2], // nome visualizzato
-            size: parseInt(values[3], 10), // dimensione del gruppo
-            real_size: parseInt(values[3], 10), // dimensione del gruppo, da non toccare nel solver (usata per display)
+            size: parseInt(values[3], 10) || 0, // dimensione del gruppo
+            real_size: parseInt(values[3], 10) || 0, // dimensione del gruppo, da non toccare nel solver (usata per display)
             required_head: values[5].toLowerCase() === 'vero' || values[5].toLowerCase() === 'true', // il gruppo richiede un posto capotavola
             near_field: values.length > 7 && (values[7].toLowerCase() === 'vero' || values[7].toLowerCase() === 'true'), // il gruppo richiede un posto vicino al campo
         };
