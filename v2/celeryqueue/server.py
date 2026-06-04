@@ -6,6 +6,8 @@ import os
 from redis import Redis
 import json
 
+from Optimizer.mnemonics import AGGREGATE_RESERVATIONS_SUB_LIST_ATTR
+
 
 redis_client = Redis(host="redis", port=6379, db=0, decode_responses=True)
 
@@ -84,8 +86,14 @@ def download_placeholders(task_id):
     task = run_mip_task.AsyncResult(task_id)
     if task.state != 'SUCCESS':
         return jsonify({"error": "Task not completed"}), 400
-    gruppi = task.result.get("groups", [])
-    prenotazioni = [(g.get("show_name", "Ospite " + str(i)), g.get("real_size", g.get("size",1)) for i, g in enumerate(gruppi)]
+    gruppi_raggruppi = task.result.get("groups", [])
+    gruppi = []
+    for g in gruppi_raggruppi:
+        if g.get(AGGREGATE_RESERVATIONS_SUB_LIST_ATTR, None):
+            gruppi.extend(g[AGGREGATE_RESERVATIONS_SUB_LIST_ATTR])
+        else:
+            gruppi.append(g)
+    prenotazioni = [(g.get("show_name", "Ospite " + str(i)), g.get("real_size", g.get("size",1))) for i, g in enumerate(gruppi)]
 
     data = generaSegnaposti(prenotazioni, event)
     return Response(data, mimetype='application/pdf')#, headers={"Content-Disposition": "attachment;filename=segnaposti_{}.pdf".format(task_id)})
