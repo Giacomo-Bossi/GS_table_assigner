@@ -85,7 +85,7 @@ def download_placeholders(task_id):
     if task.state != 'SUCCESS':
         return jsonify({"error": "Task not completed"}), 400
     gruppi = task.result.get("groups", [])
-    prenotazioni = [(g.get("show_name", "Ospite " + str(i)), g.get("size", 1)) for i, g in enumerate(gruppi)]
+    prenotazioni = [(g.get("show_name", "Ospite " + str(i)), g.get("real_size", g.get("size",1)) for i, g in enumerate(gruppi)]
 
     data = generaSegnaposti(prenotazioni, event)
     return Response(data, mimetype='application/pdf')#, headers={"Content-Disposition": "attachment;filename=segnaposti_{}.pdf".format(task_id)})
