@@ -173,21 +173,18 @@ def generaMappa(
     pdf.add_page()
     
 ## START DRAW LOGIC ##################################
-    
-    
-    # change header title
-    # pdf.set_fill_color(255, 255, 255)
-    # pdf.rect(x=width-75, y=270, w=40, h=607, style='F') 
-    # with pdf.rotation(270, width-35, 500):
-    #     pdf.set_x(x=width-75)
-    #     pdf.set_y(y=500)
+    pdf.set_fill_color(255, 255, 255)
+    pdf.rect(x=width-77, y=200, w=45, h=750, style='F') 
+    with pdf.rotation(270, width-35, 500):
+        pdf.set_x(x=width-75)
+        pdf.set_y(y=500)
 
-    # pdf.set_font("verdana", size=50)
-    # pdf.set_text_color(0, 0, 255)
-    # text = title
-    # w_text = pdf.get_string_width(text)
-    # with pdf.rotation(270, width-72, 350):
-    #     pdf.text(x=width+150- w_text/2, y=351 , text=text) 
+    pdf.set_font("verdana", size=50)
+    pdf.set_text_color(0, 0, 255)
+    text = title
+    w_text = pdf.get_string_width(text)
+    with pdf.rotation(270, width-72, 350):
+        pdf.text(x=width+150- w_text/2, y=351 , text="FESTA DELLO SPORT 2026") 
     
     #end header
 
